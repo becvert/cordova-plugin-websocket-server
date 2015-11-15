@@ -1,0 +1,38 @@
+{
+	"name" : "cordova-plugin-websocket-server", 
+	"version" : "1.0.0", 
+	"description" : "Cordova WebSocket Server Plugin", 
+	"cordova" : {
+		"id" : "cordova-plugin-websocket-server", 
+		"platforms" : [
+			"android", 
+			"ios"
+		]
+	}, 
+	"repository" : {
+		"type" : "git", 
+		"url" : "git+https://github.com/becvert/cordova-plugin-websocket-server.git"
+	}, 
+	"keywords" : [
+		"ecosystem:cordova", 
+		"cordova-android", 
+		"cordova-ios", 
+		"cordova", 
+		"plugin", 
+		"network", 
+		"websocket", 
+		"server"
+	], 
+	"engines" : [
+		{
+			"name" : "cordova", 
+			"version" : ">=3.0.0"
+		}
+	], 
+	"author" : "Sylvain Brejeon", 
+	"license" : "MIT", 
+	"bugs" : {
+		"url" : "https://github.com/becvert/cordova-plugin-websocket-server/issues"
+	}, 
+	"homepage" : "https://github.com/becvert/cordova-plugin-websocket-server"
+}

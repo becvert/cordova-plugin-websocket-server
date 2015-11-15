@@ -1,0 +1,44 @@
+<?xml version='1.0' encoding='UTF-8'?> 
+<plugin xmlns='http://apache.org/cordova/ns/plugins/1.0' xmlns:android='http://schemas.android.com/apk/res/android' id='cordova-plugin-websocket-server' version='1.0.0'>
+  <name>WebSocket Server</name>
+  <description>WebSocket Server plugin for Cordova/Phonegap</description>
+  <author>Sylvain Brejeon</author>
+  <keywords>cordova,plugin,network,websocket,server</keywords>
+  <license>MIT</license>
+  <engines>
+    <engine name='cordova' version='>=3.0.0'/>
+  </engines>
+  <js-module src='www/wsserver.js' name='WebSocketServer'>
+    <clobbers target='cordova.plugins.wsserver'/>
+  </js-module>
+  <platform name='android'>
+    <config-file target='AndroidManifest.xml' parent='/manifest'>
+      <uses-permission android:name='android.permission.INTERNET'/>
+      <uses-permission android:name='android.permission.ACCESS_WIFI_STATE'/>
+    </config-file>
+    <config-file target='res/xml/config.xml' parent='/*'>
+      <feature name='WebSocketServer'>
+        <param name='android-package' value='net.becvert.cordova.WebSocketServerPlugin'/>
+      </feature>
+    </config-file>
+    <source-file src='src/android/libs/java_websocket.jar' target-dir='libs' framework='true'/>
+    <source-file src='src/android/net/becvert/cordova/WebSocketServerPlugin.java' target-dir='src/net/becvert/cordova'/>
+    <source-file src='src/android/net/becvert/cordova/WebSocketServerImpl.java' target-dir='src/net/becvert/cordova'/>
+  </platform>
+  <platform name='ios'>
+    <config-file target='config.xml' parent='/*'>
+      <feature name='WebSocketServer'>
+        <param name='ios-package' value='WebSocketServer'/>
+      </feature>
+    </config-file>
+    <header-file src='src/ios/WebSocketServer-Bridging-Header.h'/>
+    <source-file src='src/ios/WebSocketServer.swift'/>
+    <framework src='Foundation.framework' autogen='true'/>
+    <framework src='CFNetwork.framework' autogen='true'/>
+    <framework src='Security.framework' autogen='true'/>
+    <header-file src='src/ios/vendor/headers/PSWebSocket.h' autogen='true'/>
+    <header-file src='src/ios/vendor/headers/PSWebSocketServer.h' autogen='true'/>
+    <header-file src='src/ios/vendor/headers/PSWebSocketTypes.h' autogen='true'/>
+    <source-file framework='true' src='src/ios/vendor/libPocketSocket.a' autogen='true'/>
+  </platform>
+</plugin>
