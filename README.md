@@ -47,7 +47,12 @@ Binds to all available IPv4 network interfaces ('0.0.0.0').
     },
     // WebSocket Connection
     'onOpen' : function(conn) {
-        // conn: {'uuid':'8e176b14-a1af-70a7-3e3d-8b341977a16e','remoteAddr':'192.168.1.10', 'acceptedProtocol' : 'my-protocol-v1', 'httpFields' : {...}}
+        /* conn: {
+         'uuid' : '8e176b14-a1af-70a7-3e3d-8b341977a16e',
+         'remoteAddr' : '192.168.1.10',
+         'acceptedProtocol' : 'my-protocol-v1',
+         'httpFields' : {...}
+         } */
         console.log('A user connected from %s', conn.remoteAddr);
     },
     'onMessage' : function(conn, msg) {
