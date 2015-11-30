@@ -44,7 +44,7 @@ var WebSocketServer = {
             default:
                 console.log('unknown action: ' + result.action);
             }
-        }, fail, "WebSocketServer", "start", [ port, options.origins ]);
+        }, fail, "WebSocketServer", "start", [ port, options.origins, options.protocols ]);
     },
 
     stop : function() {

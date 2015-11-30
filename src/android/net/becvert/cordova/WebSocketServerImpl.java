@@ -9,16 +9,20 @@ package net.becvert.cordova;
 
 import java.net.InetSocketAddress;
 import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
 import org.apache.cordova.CallbackContext;
 import org.apache.cordova.PluginResult;
 import org.java_websocket.WebSocket;
+import org.java_websocket.drafts.Draft;
+import org.java_websocket.exceptions.InvalidDataException;
 import org.java_websocket.framing.CloseFrame;
 import org.java_websocket.handshake.ClientHandshake;
+import org.java_websocket.handshake.ServerHandshakeBuilder;
 import org.java_websocket.server.WebSocketServer;
-import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -30,7 +34,9 @@ public class WebSocketServerImpl extends WebSocketServer {
 
     private CallbackContext callbackContext;
 
-    private JSONArray origins;
+    private List<String> origins;
+
+    private List<String> protocols;
 
     private Map<String, WebSocket> UUIDSockets = new HashMap<String, WebSocket>();
 
@@ -48,42 +54,85 @@ public class WebSocketServerImpl extends WebSocketServer {
         this.callbackContext = callbackContext;
     }
 
-    public void setOrigins(JSONArray origins) {
+    public void setOrigins(List<String> origins) {
         this.origins = origins;
+    }
+
+    public void setProtocols(List<String> protocols) {
+        this.protocols = protocols;
+    }
+
+    private String getAcceptedProtocol(ClientHandshake clientHandshake) {
+        String acceptedProtocol = null;
+        String secWebSocketProtocol = clientHandshake.getFieldValue("Sec-WebSocket-Protocol");
+        if (secWebSocketProtocol != null && !secWebSocketProtocol.equals("")) {
+            String[] requestedProtocols = secWebSocketProtocol.split(", ");
+            for (int i = 0, l = requestedProtocols.length; i < l; i++) {
+                if (protocols.indexOf(requestedProtocols[i]) > -1) {
+                    // returns first matching protocol.
+                    // assumes in order of preference.
+                    acceptedProtocol = requestedProtocols[i];
+                    break;
+                }
+            }
+        }
+        return acceptedProtocol;
+    }
+
+    @Override
+    public ServerHandshakeBuilder onWebsocketHandshakeReceivedAsServer(WebSocket conn, Draft draft,
+            ClientHandshake request) throws InvalidDataException {
+
+        ServerHandshakeBuilder serverHandshakeBuilder = super.onWebsocketHandshakeReceivedAsServer(conn, draft,
+                request);
+
+        if (origins != null) {
+            String origin = request.getFieldValue("Origin");
+            if (origins.indexOf(origin) == -1) {
+                Log.w("WebSocketServer", "handshake: origin denied: " + origin);
+                throw new InvalidDataException(CloseFrame.REFUSE);
+            }
+        }
+
+        if (protocols != null) {
+            String acceptedProtocol = getAcceptedProtocol(request);
+            if (acceptedProtocol == null) {
+                String secWebSocketProtocol = request.getFieldValue("Sec-WebSocket-Protocol");
+                Log.w("WebSocketServer", "handshake: protocol denied: " + secWebSocketProtocol);
+                throw new InvalidDataException(CloseFrame.PROTOCOL_ERROR);
+            } else {
+                serverHandshakeBuilder.put("Sec-WebSocket-Protocol", acceptedProtocol);
+            }
+        }
+
+        return serverHandshakeBuilder;
     }
 
     @Override
     public void onOpen(WebSocket webSocket, ClientHandshake clientHandshake) {
         Log.v("WebSocketServer", "onopen");
 
-        if (origins != null) {
-            boolean accept = false;
-            String origin = clientHandshake.getFieldValue("Origin");
-            for (int i = 0, l = origins.length(); i < l; i++) {
-                try {
-                    if (origins.getString(i).equals(origin)) {
-                        accept = true;
-                        break;
-                    }
-                } catch (JSONException e) {
-                    e.printStackTrace();
-                }
-            }
-            if (!accept) {
-                Log.w("WebSocketServer", "onopen: origin denied: " + origin);
-                webSocket.close(CloseFrame.REFUSE);
-                return;
-            }
+        String uuid = null;
+        while (uuid == null || UUIDSockets.containsKey(uuid)) {
+            // prevent collision
+            uuid = UUID.randomUUID().toString();
         }
-
-        String uuid = UUID.randomUUID().toString();
         UUIDSockets.put(uuid, webSocket);
         socketsUUID.put(webSocket, uuid);
 
         try {
+            JSONObject httpFields = new JSONObject();
+            Iterator<String> iterator = clientHandshake.iterateHttpFields();
+            while (iterator.hasNext()) {
+                String httpField = iterator.next();
+                httpFields.put(httpField, clientHandshake.getFieldValue(httpField));
+            }
+
             JSONObject conn = new JSONObject();
             conn.put("uuid", uuid);
-            conn.put("addr", webSocket.getRemoteSocketAddress().getAddress().getHostAddress());
+            conn.put("remoteAddr", webSocket.getRemoteSocketAddress().getAddress().getHostAddress());
+            conn.put("acceptedProtocol", getAcceptedProtocol(clientHandshake));
+            conn.put("httpFields", httpFields);
 
             JSONObject status = new JSONObject();
             status.put("action", "onOpen");

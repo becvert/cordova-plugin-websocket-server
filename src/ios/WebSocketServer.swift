@@ -5,12 +5,13 @@
  * by Sylvain Brejeon
  */
  
- import Foundation
+import Foundation
 
 @objc(WebSocketServer) class WebSocketServer : CDVPlugin, PSWebSocketServerDelegate {
     
     var wsserver: PSWebSocketServer?
     var origins: [String]?
+    var protocols: [String]?
     var UUIDSockets: [String: PSWebSocket] = [:]
     var socketsUUID: [PSWebSocket: String] = [:]
     var remoteAddresses: [PSWebSocket: String] = [:]
@@ -50,6 +51,7 @@
         
         let port = command.argumentAtIndex(0) as? Int
         origins = command.argumentAtIndex(1) as? [String]
+        protocols = command.argumentAtIndex(2) as? [String]
         
         if let server = PSWebSocketServer(host: nil, port: UInt(port!)) {
             listenerCallbackId = command.callbackId
@@ -97,6 +99,10 @@
                     webSocket.send(msg)
                 })
                 
+            } else {
+                #if DEBUG
+                    print("Send: unknown socket.")
+                #endif
             }
         } else {
             #if DEBUG
@@ -120,6 +126,10 @@
                     webSocket.close()
                 })
                 
+            } else {
+                #if DEBUG
+                    print("Close: unknown socket.")
+                #endif
             }
         } else {
             #if DEBUG
@@ -164,7 +174,7 @@
         #endif
     }
     
-    func server(server: PSWebSocketServer, acceptWebSocketWithRequest request: NSURLRequest) -> Bool {
+    func server(server: PSWebSocketServer, acceptWebSocketFrom address: NSData, withRequest request: NSURLRequest, trust: SecTrustRef, response: AutoreleasingUnsafeMutablePointer<NSHTTPURLResponse?>) -> Bool {
         
         #if DEBUG
             print("Server should accept request: \(request)")
@@ -172,7 +182,26 @@
         
         if let o = origins {
             let origin = request.valueForHTTPHeaderField("Origin")
-            return o.indexOf(origin!) != nil
+            if o.indexOf(origin!) == nil {
+                #if DEBUG
+                    print("Origin denied: \(origin)")
+                #endif
+                return false
+            }
+        }
+        
+        if let _ = protocols {
+            if let acceptedProtocol = getAcceptedProtocol(request) {
+                let headerFields = [ "Sec-WebSocket-Protocol" : acceptedProtocol ]
+                let r = NSHTTPURLResponse.init(URL: request.URL!, statusCode: 200, HTTPVersion: "1.1", headerFields: headerFields )!
+                response.memory = r
+            } else {
+                #if DEBUG
+                    let secWebSocketProtocol = request.valueForHTTPHeaderField("Sec-WebSocket-Protocol")
+                    print("Sec-Web-Protocol denied: \(secWebSocketProtocol)")
+                #endif
+                return false
+            }
         }
         
         return true;
@@ -184,14 +213,22 @@
             print("WebSocket did open")
         #endif
         
-        let uuid = NSUUID().UUIDString
+        var uuid: String!
+        while uuid == nil || UUIDSockets[uuid] != nil {
+            // prevent collision
+            uuid = NSUUID().UUIDString
+        }
         UUIDSockets[uuid] = webSocket
         socketsUUID[webSocket] = uuid
         
         let remoteAddr = IP(webSocket.remoteAddress)
         remoteAddresses[webSocket] = remoteAddr
         
-        let conn: NSDictionary = NSDictionary(objects: [uuid, remoteAddr], forKeys: ["uuid", "addr"])
+        let acceptedProtocol = getAcceptedProtocol(webSocket.URLRequest)
+        
+        let httpFields = webSocket.URLRequest.allHTTPHeaderFields
+        
+        let conn: NSDictionary = NSDictionary(objects: [uuid, remoteAddr, acceptedProtocol!, httpFields!], forKeys: ["uuid", "remoteAddr", "acceptedProtocol", "httpFields"])
         let status: NSDictionary = NSDictionary(objects: ["onOpen", conn], forKeys: ["action", "conn"])
         let pluginResult = CDVPluginResult(status: CDVCommandStatus_OK, messageAsDictionary: status as [NSObject : AnyObject])
         pluginResult.setKeepCallbackAsBool(true)
@@ -328,6 +365,26 @@
             freeifaddrs(ifaddr)
         }
         return addresses
+    }
+    
+    private func getAcceptedProtocol(request: NSURLRequest) -> String? {
+        var acceptedProtocol: String?
+        if let secWebSocketProtocol = request.valueForHTTPHeaderField("Sec-WebSocket-Protocol") {
+            let requestedProtocols = secWebSocketProtocol.componentsSeparatedByString(", ")
+            for requestedProtocol in requestedProtocols {
+                if protocols!.indexOf(requestedProtocol) != nil {
+                    // returns first matching protocol.
+                    // assumes in order of preference.
+                    acceptedProtocol = requestedProtocol
+                    break
+                }
+            }
+            #if DEBUG
+                print("Sec-WebSocket-Protocol: \(secWebSocketProtocol)")
+                print("Accepted Protocol: \(acceptedProtocol)")
+            #endif
+        }
+        return acceptedProtocol
     }
     
 }

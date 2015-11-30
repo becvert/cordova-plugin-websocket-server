@@ -88,20 +88,34 @@ public class WebSocketServerPlugin extends CordovaPlugin {
 
             final int port = args.optInt(0);
             final JSONArray origins = args.optJSONArray(1);
+            final JSONArray protocols = args.optJSONArray(2);
             if (wsserver == null) {
                 cordova.getThreadPool().execute(new Runnable() {
                     @Override
                     public void run() {
                         wsserver = new WebSocketServerImpl(port);
                         wsserver.setCallbackContext(callbackContext);
-                        wsserver.setOrigins(origins);
+                        try {
+                            wsserver.setOrigins(jsonArrayToArrayList(origins));
+                        } catch (JSONException e) {
+                            wsserver = null;
+                            callbackContext.error("Origins option error");
+                            return;
+                        }
+                        try {
+                            wsserver.setProtocols(jsonArrayToArrayList(protocols));
+                        } catch (JSONException e) {
+                            wsserver = null;
+                            callbackContext.error("Protocols option error");
+                            return;
+                        }
                         wsserver.start();
 
                         try {
                             // wait for port binding!
                             Thread.sleep(2000);
-                        } catch (InterruptedException e1) {
-                            e1.printStackTrace();
+                        } catch (InterruptedException e) {
+                            e.printStackTrace();
                         }
 
                         try {
@@ -121,7 +135,7 @@ public class WebSocketServerPlugin extends CordovaPlugin {
                     }
                 });
             } else {
-                callbackContext.error("Server already running or port not specified.");
+                callbackContext.error("Server already running.");
                 return false;
             }
 
@@ -229,6 +243,17 @@ public class WebSocketServerPlugin extends CordovaPlugin {
             e.printStackTrace();
         }
         return interfaces;
+    }
+
+    public static List<String> jsonArrayToArrayList(JSONArray jsonArray) throws JSONException {
+        ArrayList<String> list = null;
+        if (jsonArray != null && jsonArray.length() > 0) {
+            list = new ArrayList<String>();
+            for (int i = 0; i < jsonArray.length(); i++) {
+                list.add(jsonArray.get(i).toString());
+            }
+        }
+        return list;
     }
 
 }

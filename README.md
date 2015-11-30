@@ -12,6 +12,20 @@ In your application project directory:
 cordova plugin add cordova-plugin-websocket-server
 ```
 
+#### iOS
+It's written in Swift, not objective-c.
+
+In the build settings of your project:
+
+```Embedded Content Contains Swift Code: YES```
+
+```Objective-C Bridging Header: YOUR_PROJECT/PATH_TO/YOUR_PROJECT-Bridging-Header.h```
+Insert the content of the WebSocketServer-Bridging-Header.h file in it.
+
+```Other swift flags: -D DEBUG``` optional. for debugging purpose.
+
+```Run path Search Paths: @executable_path/Frameworks```
+
 ## Usage ##
 
 ```javascript
@@ -33,16 +47,17 @@ Binds to all available IPv4 network interfaces ('0.0.0.0').
     },
     // WebSocket Connection
     'onOpen' : function(conn) {
-        // conn: {'uuid':'8e176b14-a1af-70a7-3e3d-8b341977a16e','addr':'192.168.1.10'}
-        console.log('A user connected from %s', conn.addr);
+        // conn: {'uuid':'8e176b14-a1af-70a7-3e3d-8b341977a16e','remoteAddr':'192.168.1.10', 'acceptedProtocol' : 'my-protocol-v1', 'httpFields' : {...}}
+        console.log('A user connected from %s', conn.remoteAddr);
     },
     'onMessage' : function(conn, msg) {
         console.log(conn, msg);
     },
     'onClose' : function(conn) {
-        console.log('A user disconnected from %s', conn.addr);
+        console.log('A user disconnected from %s', conn.remoteAddr);
     },
     'origins' : [ 'file://' ] // optional. validates the 'Origin' HTTP Header.
+    'protocols' : [ 'my-protocol-v1', 'my-protocol-v2' ] // optional. validates the 'Sec-WebSocket-Protocol' HTTP Header.
 });
 ```
 
@@ -76,32 +91,13 @@ wsserver.getInterfaces(function(ips) {
 });
 ```
 
-## Contribution
-
-#### Android
-Project is set up for Eclipse
-
-#### iOS
-It's written in Swift, not objective-c.
-
-In the build settings of your project:
-
-```Embedded Content Contains Swift Code: YES```
-
-```Objective-C Bridging Header: YOUR_PROJECT/PATH_TO/YOUR_PROJECT-Bridging-Header.h```
-Insert the content of the WebSocketServer-Bridging-Header.h file in it.
-
-```Other swift flags: -D DEBUG``` optional. for debugging purpose.
-
-```Run path Search Paths: @executable_path/Frameworks```
-
 ## Credits
 
 #### Android
 It depends on [the TooTallNate WebSocket Server](https://github.com/TooTallNate/Java-WebSocket).
 
 #### iOS
-It depends on [the PocketSocket Server](https://github.com/couchbasedeps/PocketSocket) forked from [the original PocketSocket Server] (https://github.com/zwopple/PocketSocket). 
+It depends on [the couchbasedeps PocketSocket Server](https://github.com/couchbasedeps/PocketSocket) forked from [the zwopple PocketSocket Server](https://github.com/zwopple/PocketSocket). 
 
 ## Licence ##
 
