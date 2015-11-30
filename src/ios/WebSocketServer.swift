@@ -198,7 +198,7 @@ import Foundation
             } else {
                 #if DEBUG
                     let secWebSocketProtocol = request.valueForHTTPHeaderField("Sec-WebSocket-Protocol")
-                    print("Sec-Web-Protocol denied: \(secWebSocketProtocol)")
+                    print("Sec-WebSocket-Protocol denied: \(secWebSocketProtocol)")
                 #endif
                 return false
             }
