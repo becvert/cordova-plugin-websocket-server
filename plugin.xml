@@ -46,6 +46,7 @@
     <framework src='Foundation.framework' autogen='true'/>
     <framework src='CFNetwork.framework' autogen='true'/>
     <framework src='Security.framework' autogen='true'/>
+    <framework src='libz.tbd' autogen='true'/>
     <header-file src='src/ios/vendor/headers/PSWebSocket.h' autogen='true'/>
     <header-file src='src/ios/vendor/headers/PSWebSocketServer.h' autogen='true'/>
     <header-file src='src/ios/vendor/headers/PSWebSocketTypes.h' autogen='true'/>
