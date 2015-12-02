@@ -158,7 +158,7 @@ public class WebSocketServerImpl extends WebSocketServer {
             try {
                 JSONObject conn = new JSONObject();
                 conn.put("uuid", uuid);
-                conn.put("addr", webSocket.getRemoteSocketAddress().getAddress().getHostAddress());
+                conn.put("remoteAddr", webSocket.getRemoteSocketAddress().getAddress().getHostAddress());
 
                 JSONObject status = new JSONObject();
                 status.put("action", "onMessage");
@@ -191,7 +191,7 @@ public class WebSocketServerImpl extends WebSocketServer {
                 try {
                     JSONObject conn = new JSONObject();
                     conn.put("uuid", uuid);
-                    conn.put("addr", webSocket.getRemoteSocketAddress().getAddress().getHostAddress());
+                    conn.put("remoteAddr", webSocket.getRemoteSocketAddress().getAddress().getHostAddress());
 
                     JSONObject status = new JSONObject();
                     status.put("action", "onClose");

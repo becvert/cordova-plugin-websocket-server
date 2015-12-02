@@ -245,7 +245,7 @@ import Foundation
 
             let remoteAddr = IP(webSocket.remoteAddress)
 
-            let conn: NSDictionary = NSDictionary(objects: [uuid, remoteAddr], forKeys: ["uuid", "addr"])
+            let conn: NSDictionary = NSDictionary(objects: [uuid, remoteAddr], forKeys: ["uuid", "remoteAddr"])
             let status: NSDictionary = NSDictionary(objects: ["onMessage", conn, message], forKeys: ["action", "conn", "msg"])
             let pluginResult = CDVPluginResult(status: CDVCommandStatus_OK, messageAsDictionary: status as [NSObject : AnyObject])
             pluginResult.setKeepCallbackAsBool(true)
@@ -267,7 +267,7 @@ import Foundation
             
             let remoteAddr = remoteAddresses[webSocket] // IP(ws.remoteAddress) bad access error
             
-            let conn: NSDictionary = NSDictionary(objects: [uuid, remoteAddr!], forKeys: ["uuid", "addr"])
+            let conn: NSDictionary = NSDictionary(objects: [uuid, remoteAddr!], forKeys: ["uuid", "remoteAddr"])
             let status: NSDictionary = NSDictionary(objects: ["onClose", conn], forKeys: ["action", "conn"])
             let pluginResult = CDVPluginResult(status: CDVCommandStatus_OK, messageAsDictionary: status as [NSObject : AnyObject])
             pluginResult.setKeepCallbackAsBool(true)
