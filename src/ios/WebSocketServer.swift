@@ -17,6 +17,12 @@ import Foundation
     var remoteAddresses: [PSWebSocket: String] = [:]
     var listenerCallbackId: String?
     
+    override func pluginInitialize() {
+        UUIDSockets  = [:]
+        socketsUUID = [:]
+        remoteAddresses = [:]
+    }
+    
     override func onAppTerminate() {
         if let server = wsserver {
             server.stop()
