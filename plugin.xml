@@ -27,9 +27,9 @@
               <param name="android-package" value="net.becvert.cordova.WebSocketServerPlugin"/>
             </feature>
         </config-file>
-        <source-file src="src/android/libs/java_websocket.jar" target-dir="libs" framework="true"/>
         <source-file src="src/android/net/becvert/cordova/WebSocketServerPlugin.java" target-dir="src/net/becvert/cordova"/>
         <source-file src="src/android/net/becvert/cordova/WebSocketServerImpl.java" target-dir="src/net/becvert/cordova"/>
+		<source-file src="src/android/libs/java_websocket.jar" target-dir="libs"/>
     </platform>
   
     <platform name="ios">
