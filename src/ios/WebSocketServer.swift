@@ -348,7 +348,8 @@ import Foundation
         var ifaddr : UnsafeMutablePointer<ifaddrs> = nil
         if getifaddrs(&ifaddr) == 0 {
             // For each interface ...
-            for (var ptr = ifaddr; ptr != nil; ptr = ptr.memory.ifa_next) {
+            var ptr = ifaddr;
+            while (ptr != nil) {
                 let interface = ptr.memory
                 
                 // Check for IPv4 interface:
@@ -367,6 +368,7 @@ import Foundation
                         addresses.append(String.fromCString(hostname)!)
                     }
                 }
+                ptr = ptr.memory.ifa_next;
             }
             freeifaddrs(ifaddr)
         }
