@@ -131,8 +131,15 @@ public class WebSocketServerImpl extends WebSocketServer {
             JSONObject conn = new JSONObject();
             conn.put("uuid", uuid);
             conn.put("remoteAddr", webSocket.getRemoteSocketAddress().getAddress().getHostAddress());
-            conn.put("acceptedProtocol", getAcceptedProtocol(clientHandshake));
+
+            String acceptedProtocol = "";
+            if (protocols != null) {
+                acceptedProtocol = getAcceptedProtocol(clientHandshake);
+            }
+            conn.put("acceptedProtocol", acceptedProtocol);
+
             conn.put("httpFields", httpFields);
+            conn.put("resource", clientHandshake.getResourceDescriptor());
 
             JSONObject status = new JSONObject();
             status.put("action", "onOpen");
@@ -196,6 +203,9 @@ public class WebSocketServerImpl extends WebSocketServer {
                     JSONObject status = new JSONObject();
                     status.put("action", "onClose");
                     status.put("conn", conn);
+                    status.put("code", code);
+                    status.put("reason", reason);
+                    status.put("wasClean", remote);
 
                     Log.d("WebSocketServer", "onclose result: " + status.toString());
                     PluginResult result = new PluginResult(PluginResult.Status.OK, status);
@@ -258,13 +268,17 @@ public class WebSocketServerImpl extends WebSocketServer {
 
     }
 
-    public void close(String uuid) {
+    public void close(String uuid, int code, String reason) {
         Log.v("WebSocketServer", "close");
 
         WebSocket webSocket = UUIDSockets.get(uuid);
 
         if (webSocket != null) {
-            webSocket.close(CloseFrame.NORMAL);
+            if (code == -1) {
+                webSocket.close(CloseFrame.NORMAL);
+            } else {
+                webSocket.close(code, reason);
+            }
             UUIDSockets.remove(uuid);
             socketsUUID.remove(webSocket);
         } else {

@@ -51,14 +51,15 @@ Binds to all available IPv4 network interfaces ('0.0.0.0').
          'uuid' : '8e176b14-a1af-70a7-3e3d-8b341977a16e',
          'remoteAddr' : '192.168.1.10',
          'acceptedProtocol' : 'my-protocol-v1',
-         'httpFields' : {...}
+         'httpFields' : {...},
+		 'resource' : '/?param1=value1&param2=value2'
          } */
         console.log('A user connected from %s', conn.remoteAddr);
     },
     'onMessage' : function(conn, msg) {
         console.log(conn, msg);
     },
-    'onClose' : function(conn) {
+    'onClose' : function(conn, code, reason) {
         console.log('A user disconnected from %s', conn.remoteAddr);
     },
     'origins' : [ 'file://' ] // optional. validates the 'Origin' HTTP Header.
@@ -80,11 +81,11 @@ Sends a message to the given connection.
 wsserver.send({'uuid':'8e176b14-a1af-70a7-3e3d-8b341977a16e'}, msg);
 ```
 
-#### `close(conn)`
-Closes a websocket connection.
+#### `close(conn, code, reason)`
+Closes a websocket connection. Close event code and reason are optional.
 
 ```javascript
-wsserver.close({'uuid':'8e176b14-a1af-70a7-3e3d-8b341977a16e'});
+wsserver.close({'uuid':'8e176b14-a1af-70a7-3e3d-8b341977a16e'}, 4000, 'my reason');
 ```
 
 #### `getInterfaces(callback)`

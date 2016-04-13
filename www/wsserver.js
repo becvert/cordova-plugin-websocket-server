@@ -29,7 +29,6 @@ var WebSocketServer = {
                 }
                 break;
             case 'onOpen':
-            case 'onClose':
                 var callback = options[result.action];
                 if (callback) {
                     callback(result.conn);
@@ -39,6 +38,12 @@ var WebSocketServer = {
                 var callback = options[result.action];
                 if (callback) {
                     callback(result.conn, result.msg);
+                }
+                break;
+            case 'onClose':
+                var callback = options[result.action];
+                if (callback) {
+                    callback(result.conn, result.code, result.reason, result.wasClean);
                 }
                 break;
             default:
@@ -55,8 +60,8 @@ var WebSocketServer = {
         return exec(null, fail, "WebSocketServer", "send", [ conn.uuid, msg ]);
     },
 
-    close : function(conn) {
-        return exec(null, fail, "WebSocketServer", "close", [ conn.uuid ]);
+    close : function(conn, code, reason) {
+        return exec(null, fail, "WebSocketServer", "close", [ conn.uuid, code, reason ]);
     }
 
 };

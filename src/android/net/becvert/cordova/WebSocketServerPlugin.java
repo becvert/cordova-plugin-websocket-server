@@ -196,12 +196,15 @@ public class WebSocketServerPlugin extends CordovaPlugin {
         } else if (ACTION_CLOSE.equals(action)) {
 
             final String uuid = args.optString(0);
+            final int code = args.optInt(1, -1);
+            final String reason = args.optString(2);
+
             if (uuid != null) {
                 this.cordova.getThreadPool().execute(new Runnable() {
                     @Override
                     public void run() {
                         if (wsserver != null) {
-                            wsserver.close(uuid);
+                            wsserver.close(uuid, code, reason);
                         }
                     }
                 });

@@ -9,13 +9,13 @@ import Foundation
 
 @objc(WebSocketServer) class WebSocketServer : CDVPlugin, PSWebSocketServerDelegate {
     
-    var wsserver: PSWebSocketServer?
-    var origins: [String]?
-    var protocols: [String]?
-    var UUIDSockets: [String: PSWebSocket] = [:]
-    var socketsUUID: [PSWebSocket: String] = [:]
-    var remoteAddresses: [PSWebSocket: String] = [:]
-    var listenerCallbackId: String?
+    private var wsserver: PSWebSocketServer?
+    private var origins: [String]?
+    private var protocols: [String]?
+    private var UUIDSockets: [String: PSWebSocket]!
+    private var socketsUUID: [PSWebSocket: String]!
+    private var remoteAddresses: [PSWebSocket: String]!
+    private var listenerCallbackId: String?
     
     override func pluginInitialize() {
         UUIDSockets  = [:]
@@ -124,12 +124,18 @@ import Foundation
         #endif
         
         let uuid = command.argumentAtIndex(0) as? String
+        let code = command.argumentAtIndex(1, withDefault: -1) as! Int
+        let reason = command.argumentAtIndex(2) as? String
         
         if uuid != nil {
             if let webSocket = UUIDSockets[uuid!] {
                 
                 commandDelegate?.runInBackground({
-                    webSocket.close()
+                    if (code == -1) {
+                        webSocket.close()
+                    } else {
+                        webSocket.closeWithCode(code, reason: reason)
+                    }
                 })
                 
             } else {
@@ -230,11 +236,15 @@ import Foundation
         let remoteAddr = IP(webSocket.remoteAddress)
         remoteAddresses[webSocket] = remoteAddr
         
-        let acceptedProtocol = getAcceptedProtocol(webSocket.URLRequest)
+        var acceptedProtocol = ""
+        if (protocols != nil) {
+            acceptedProtocol = getAcceptedProtocol(webSocket.URLRequest)!
+        }
         
-        let httpFields = webSocket.URLRequest.allHTTPHeaderFields
+        let httpFields = webSocket.URLRequest.allHTTPHeaderFields!
+        let resource = webSocket.URLRequest.URL!.resourceSpecifier
         
-        let conn: NSDictionary = NSDictionary(objects: [uuid, remoteAddr, acceptedProtocol!, httpFields!], forKeys: ["uuid", "remoteAddr", "acceptedProtocol", "httpFields"])
+        let conn: NSDictionary = NSDictionary(objects: [uuid, remoteAddr, acceptedProtocol, httpFields, resource], forKeys: ["uuid", "remoteAddr", "acceptedProtocol", "httpFields", "resource"])
         let status: NSDictionary = NSDictionary(objects: ["onOpen", conn], forKeys: ["action", "conn"])
         let pluginResult = CDVPluginResult(status: CDVCommandStatus_OK, messageAsDictionary: status as [NSObject : AnyObject])
         pluginResult.setKeepCallbackAsBool(true)
@@ -274,7 +284,7 @@ import Foundation
             let remoteAddr = remoteAddresses[webSocket] // IP(ws.remoteAddress) bad access error
             
             let conn: NSDictionary = NSDictionary(objects: [uuid, remoteAddr!], forKeys: ["uuid", "remoteAddr"])
-            let status: NSDictionary = NSDictionary(objects: ["onClose", conn], forKeys: ["action", "conn"])
+            let status: NSDictionary = NSDictionary(objects: ["onClose", conn, code, reason, wasClean], forKeys: ["action", "conn", "code", "reason", "wasClean"])
             let pluginResult = CDVPluginResult(status: CDVCommandStatus_OK, messageAsDictionary: status as [NSObject : AnyObject])
             pluginResult.setKeepCallbackAsBool(true)
             commandDelegate?.sendPluginResult(pluginResult, callbackId: listenerCallbackId)
