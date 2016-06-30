@@ -50,6 +50,6 @@
         <source-file framework="true" src="src/ios/vendor/libPocketSocket.a" autogen="true"/>
     </platform>
     
-    <dependency id="cordova-plugin-add-swift-support" url="https://github.com/akofman/cordova-plugin-add-swift-support"/>
+    <dependency id="cordova-plugin-add-swift-support"/>
   
 </plugin>
