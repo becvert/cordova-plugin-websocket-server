@@ -38,7 +38,7 @@ Binds to all available IPv4 network interfaces ('0.0.0.0').
          'remoteAddr' : '192.168.1.10',
          'acceptedProtocol' : 'my-protocol-v1',
          'httpFields' : {...},
-		 'resource' : '/?param1=value1&param2=value2'
+         'resource' : '/?param1=value1&param2=value2'
          } */
         console.log('A user connected from %s', conn.remoteAddr);
     },
@@ -48,7 +48,7 @@ Binds to all available IPv4 network interfaces ('0.0.0.0').
     'onClose' : function(conn, code, reason) {
         console.log('A user disconnected from %s', conn.remoteAddr);
     },
-    'origins' : [ 'file://' ] // optional. validates the 'Origin' HTTP Header.
+    'origins' : [ 'file://' ], // optional. validates the 'Origin' HTTP Header.
     'protocols' : [ 'my-protocol-v1', 'my-protocol-v2' ] // optional. validates the 'Sec-WebSocket-Protocol' HTTP Header.
 });
 ```
