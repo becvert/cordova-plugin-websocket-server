@@ -89,7 +89,7 @@ public class WebSocketServerImpl extends WebSocketServer {
         if (origins != null) {
             String origin = request.getFieldValue("Origin");
             if (origins.indexOf(origin) == -1) {
-                Log.w("WebSocketServer", "handshake: origin denied: " + origin);
+                Log.w(WebSocketServerPlugin.TAG, "handshake: origin denied: " + origin);
                 throw new InvalidDataException(CloseFrame.REFUSE);
             }
         }
@@ -98,7 +98,7 @@ public class WebSocketServerImpl extends WebSocketServer {
             String acceptedProtocol = getAcceptedProtocol(request);
             if (acceptedProtocol == null) {
                 String secWebSocketProtocol = request.getFieldValue("Sec-WebSocket-Protocol");
-                Log.w("WebSocketServer", "handshake: protocol denied: " + secWebSocketProtocol);
+                Log.w(WebSocketServerPlugin.TAG, "handshake: protocol denied: " + secWebSocketProtocol);
                 throw new InvalidDataException(CloseFrame.PROTOCOL_ERROR);
             } else {
                 serverHandshakeBuilder.put("Sec-WebSocket-Protocol", acceptedProtocol);
@@ -110,7 +110,7 @@ public class WebSocketServerImpl extends WebSocketServer {
 
     @Override
     public void onOpen(WebSocket webSocket, ClientHandshake clientHandshake) {
-        Log.v("WebSocketServer", "onopen");
+        Log.v(WebSocketServerPlugin.TAG, "onopen");
 
         String uuid = null;
         while (uuid == null || UUIDSockets.containsKey(uuid)) {
@@ -145,19 +145,20 @@ public class WebSocketServerImpl extends WebSocketServer {
             status.put("action", "onOpen");
             status.put("conn", conn);
 
-            Log.d("WebSocketServer", "onopen result: " + status.toString());
+            Log.d(WebSocketServerPlugin.TAG, "onopen result: " + status.toString());
             PluginResult result = new PluginResult(PluginResult.Status.OK, status);
             result.setKeepCallback(true);
             callbackContext.sendPluginResult(result);
 
         } catch (JSONException e) {
             e.printStackTrace();
+            callbackContext.error("Error: " + e.getMessage());
         }
     }
 
     @Override
     public void onMessage(WebSocket webSocket, String msg) {
-        Log.v("WebSocketServer", "onmessage");
+        Log.v(WebSocketServerPlugin.TAG, "onmessage");
 
         String uuid = socketsUUID.get(webSocket);
 
@@ -172,23 +173,24 @@ public class WebSocketServerImpl extends WebSocketServer {
                 status.put("conn", conn);
                 status.put("msg", msg);
 
-                Log.d("WebSocketServer", "onmessage result: " + status.toString());
+                Log.d(WebSocketServerPlugin.TAG, "onmessage result: " + status.toString());
                 PluginResult result = new PluginResult(PluginResult.Status.OK, status);
                 result.setKeepCallback(true);
                 callbackContext.sendPluginResult(result);
 
             } catch (JSONException e) {
                 e.printStackTrace();
+                callbackContext.error("Error: " + e.getMessage());
             }
         } else {
-            Log.d("WebSocketServer", "onmessage: unknown websocket");
+            Log.d(WebSocketServerPlugin.TAG, "onmessage: unknown websocket");
         }
 
     }
 
     @Override
     public void onClose(WebSocket webSocket, int code, String reason, boolean remote) {
-        Log.v("WebSocketServer", "onclose");
+        Log.v(WebSocketServerPlugin.TAG, "onclose");
 
         if (webSocket != null) {
 
@@ -207,19 +209,20 @@ public class WebSocketServerImpl extends WebSocketServer {
                     status.put("reason", reason);
                     status.put("wasClean", remote);
 
-                    Log.d("WebSocketServer", "onclose result: " + status.toString());
+                    Log.d(WebSocketServerPlugin.TAG, "onclose result: " + status.toString());
                     PluginResult result = new PluginResult(PluginResult.Status.OK, status);
                     result.setKeepCallback(true);
                     callbackContext.sendPluginResult(result);
 
                 } catch (JSONException e) {
                     e.printStackTrace();
+                    callbackContext.error("Error: " + e.getMessage());
                 } finally {
                     socketsUUID.remove(webSocket);
                     UUIDSockets.remove(uuid);
                 }
             } else {
-                Log.d("WebSocketServer", "onclose: unknown websocket");
+                Log.d(WebSocketServerPlugin.TAG, "onclose: unknown websocket");
             }
 
         }
@@ -228,22 +231,23 @@ public class WebSocketServerImpl extends WebSocketServer {
 
     @Override
     public void onError(WebSocket webSocket, Exception exception) {
-        Log.v("WebSocketServer", "onerror");
+        Log.v(WebSocketServerPlugin.TAG, "onerror");
 
         if (webSocket == null) {
             try {
                 JSONObject status = new JSONObject();
-                status.put("action", "onStop");
+                status.put("action", "onDidNotStart");
                 status.put("addr", this.getAddress().getAddress().getHostAddress());
                 status.put("port", this.getPort());
 
-                Log.d("WebSocketServer", "onerror result: " + status.toString());
+                Log.d(WebSocketServerPlugin.TAG, "onerror result: " + status.toString());
                 PluginResult result = new PluginResult(PluginResult.Status.OK, status);
                 result.setKeepCallback(false);
                 this.callbackContext.sendPluginResult(result);
 
             } catch (JSONException e) {
                 e.printStackTrace();
+                callbackContext.error("Error: " + e.getMessage());
             }
 
             this.active = false;
@@ -256,20 +260,20 @@ public class WebSocketServerImpl extends WebSocketServer {
     }
 
     public void send(String uuid, String msg) {
-        Log.v("WebSocketServer", "send");
+        Log.v(WebSocketServerPlugin.TAG, "send");
 
         WebSocket webSocket = UUIDSockets.get(uuid);
 
         if (webSocket != null) {
             webSocket.send(msg);
         } else {
-            Log.d("WebSocketServer", "send: unknown websocket");
+            Log.d(WebSocketServerPlugin.TAG, "send: unknown websocket");
         }
 
     }
 
     public void close(String uuid, int code, String reason) {
-        Log.v("WebSocketServer", "close");
+        Log.v(WebSocketServerPlugin.TAG, "close");
 
         WebSocket webSocket = UUIDSockets.get(uuid);
 
@@ -282,7 +286,7 @@ public class WebSocketServerImpl extends WebSocketServer {
             UUIDSockets.remove(uuid);
             socketsUUID.remove(webSocket);
         } else {
-            Log.d("WebSocketServer", "close: unknown websocket");
+            Log.d(WebSocketServerPlugin.TAG, "close: unknown websocket");
         }
 
     }

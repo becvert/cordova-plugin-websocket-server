@@ -14,8 +14,8 @@ var fail = function(o) {
 
 var WebSocketServer = {
 
-    getInterfaces : function(callback) {
-        return exec(callback, fail, "WebSocketServer", "getInterfaces", []);
+    getInterfaces : function(success, failure) {
+        return exec(success, failure, "WebSocketServer", "getInterfaces", []);
     },
 
     start : function(port, options) {
@@ -23,6 +23,12 @@ var WebSocketServer = {
             switch (result.action) {
             case 'onStart':
             case 'onStop':
+                var callback = options[result.action];
+                if (callback) {
+                    callback(result.addr, result.port);
+                }
+                break;
+            case 'onDidNotStart':
                 var callback = options[result.action];
                 if (callback) {
                     callback(result.addr, result.port);

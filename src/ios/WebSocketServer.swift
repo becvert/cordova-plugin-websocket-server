@@ -10,6 +10,7 @@ import Foundation
 @objc(WebSocketServer) public class WebSocketServer : CDVPlugin, PSWebSocketServerDelegate {
     
     fileprivate var wsserver: PSWebSocketServer?
+    fileprivate var port: Int?
     fileprivate var origins: [String]?
     fileprivate var protocols: [String]?
     fileprivate var UUIDSockets: [String: PSWebSocket]!
@@ -36,11 +37,34 @@ import Foundation
     public func getInterfaces(_ command: CDVInvokedUrlCommand) {
         
         commandDelegate?.run(inBackground: {
+        
+            var ipv4Addresses: [String] = []
+            var ipv6Addresses: [String] = []
+        
+            for intf in Interface.allInterfaces() {
+                if !intf.isLoopback {
+                    if intf.family == .ipv6 {
+                        ipv6Addresses.append(intf.address!)
+                    } else if intf.family == .ipv4 {
+                    ipv4Addresses.append(intf.address!)
+                    }
+                }
+            }
             
-            let intfs = self.getWiFiAddresses()
+            if ipv6Addresses.count > 1 {
+                ipv6Addresses = Array(Set(ipv6Addresses))
+            }
+        
+            let addresses: NSDictionary = NSDictionary(objects: [ipv4Addresses, ipv6Addresses], forKeys: ["ipv4Addresses" as NSCopying, "ipv6Addresses" as NSCopying])
             
-            let pluginResult = CDVPluginResult( status: CDVCommandStatus_OK, messageAs: intfs)
+            #if DEBUG
+                print("WebSocketServer: getInterfaces: \(addresses)")
+            #endif
+            
+            let pluginResult = CDVPluginResult(status: CDVCommandStatus_OK, messageAs: addresses as! [AnyHashable: Any])
+            pluginResult?.setKeepCallbackAs(false)
             self.commandDelegate?.send(pluginResult, callbackId: command.callbackId)
+            
         })
         
     }
@@ -48,14 +72,14 @@ import Foundation
     public func start(_ command: CDVInvokedUrlCommand) {
         
         #if DEBUG
-            print("start")
+            print("WebSocketServer: start")
         #endif
         
         if wsserver != nil {
             return
         }
         
-        let port = command.argument(at: 0) as? Int
+        port = command.argument(at: 0) as? Int
         origins = command.argument(at: 1) as? [String]
         protocols = command.argument(at: 2) as? [String]
         
@@ -77,7 +101,7 @@ import Foundation
     public func stop(_ command: CDVInvokedUrlCommand) {
         
         #if DEBUG
-            print("stop")
+            print("WebSocketServer: stop")
         #endif
         
         if let server = wsserver {
@@ -92,7 +116,7 @@ import Foundation
     public func send(_ command: CDVInvokedUrlCommand) {
         
         #if DEBUG
-            print("send")
+            print("WebSocketServer: send")
         #endif
         
         let uuid = command.argument(at: 0) as? String
@@ -107,12 +131,12 @@ import Foundation
                 
             } else {
                 #if DEBUG
-                    print("Send: unknown socket.")
+                    print("WebSocketServer: Send: unknown socket.")
                 #endif
             }
         } else {
             #if DEBUG
-                print("Send: UUID or msg not specified.")
+                print("WebSocketServer: Send: UUID or msg not specified.")
             #endif
         }
     }
@@ -120,7 +144,7 @@ import Foundation
     public func close(_ command: CDVInvokedUrlCommand) {
         
         #if DEBUG
-            print("close")
+            print("WebSocketServer: close")
         #endif
         
         let uuid = command.argument(at: 0) as? String
@@ -140,12 +164,12 @@ import Foundation
                 
             } else {
                 #if DEBUG
-                    print("Close: unknown socket.")
+                    print("WebSocketServer: Close: unknown socket.")
                 #endif
             }
         } else {
             #if DEBUG
-                print("Close: UUID not specified.")
+                print("WebSocketServer: Close: UUID not specified.")
             #endif
         }
     }
@@ -153,7 +177,7 @@ import Foundation
     public func serverDidStart(_ server: PSWebSocketServer!) {
         
         #if DEBUG
-            print("Server did start…")
+            print("WebSocketServer: Server did start…")
         #endif
         
         let status: NSDictionary = NSDictionary(objects: ["onStart", "0.0.0.0", Int(server.realPort)], forKeys: ["action" as NSCopying, "addr" as NSCopying, "port" as NSCopying])
@@ -165,7 +189,7 @@ import Foundation
     public func serverDidStop(_ server: PSWebSocketServer!) {
         
         #if DEBUG
-            print("Server did stop…")
+            print("WebSocketServer: Server did stop…")
         #endif
         
         wsserver = nil
@@ -182,21 +206,31 @@ import Foundation
     public func server(_ server: PSWebSocketServer!, didFailWithError error: Error!) {
         
         #if DEBUG
-            print("Server did fail with error: \(error)")
+            print("WebSocketServer: Server did fail with error: \(error)")
         #endif
+        
+        wsserver = nil
+        UUIDSockets.removeAll()
+        socketsUUID.removeAll()
+        remoteAddresses.removeAll()
+        
+        let status: NSDictionary = NSDictionary(objects: ["onDidNotStart", "0.0.0.0", port!], forKeys: ["action" as NSCopying, "addr" as NSCopying, "port" as NSCopying])
+        let pluginResult = CDVPluginResult(status: CDVCommandStatus_OK, messageAs: status as! [AnyHashable: Any])
+        pluginResult?.setKeepCallbackAs(false)
+        commandDelegate?.send(pluginResult, callbackId: listenerCallbackId)
     }
     
     public func server(_ server: PSWebSocketServer!, acceptWebSocketFrom address: Data, with request: URLRequest, trust: SecTrust, response: AutoreleasingUnsafeMutablePointer<HTTPURLResponse?>) -> Bool {
         
         #if DEBUG
-            print("Server should accept request: \(request)")
+            print("WebSocketServer: Server should accept request: \(request)")
         #endif
         
         if let o = origins {
             let origin = request.value(forHTTPHeaderField: "Origin")
             if o.index(of: origin!) == nil {
                 #if DEBUG
-                    print("Origin denied: \(origin)")
+                    print("WebSocketServer: Origin denied: \(origin)")
                 #endif
                 return false
             }
@@ -210,7 +244,7 @@ import Foundation
             } else {
                 #if DEBUG
                     let secWebSocketProtocol = request.value(forHTTPHeaderField: "Sec-WebSocket-Protocol")
-                    print("Sec-WebSocket-Protocol denied: \(secWebSocketProtocol)")
+                    print("WebSocketServer: Sec-WebSocket-Protocol denied: \(secWebSocketProtocol)")
                 #endif
                 return false
             }
@@ -222,7 +256,7 @@ import Foundation
     public func server(_ server: PSWebSocketServer!, webSocketDidOpen webSocket: PSWebSocket!) {
         
         #if DEBUG
-            print("WebSocket did open")
+            print("WebSocketServer: WebSocket did open")
         #endif
         
         var uuid: String!
@@ -233,7 +267,7 @@ import Foundation
         UUIDSockets[uuid] = webSocket
         socketsUUID[webSocket] = uuid
         
-        let remoteAddr = IP(webSocket.remoteAddress)
+        let remoteAddr = extractAddress(webSocket.remoteAddress)!
         remoteAddresses[webSocket] = remoteAddr
         
         var acceptedProtocol = ""
@@ -254,12 +288,12 @@ import Foundation
     public func server(_ server: PSWebSocketServer!, webSocket: PSWebSocket!, didReceiveMessage message: Any) {
         
         #if DEBUG
-            print("Server websocket did receive message: \(message)")
+            print("WebSocketServer: Websocket did receive message: \(message)")
         #endif
         
         if let uuid = socketsUUID[webSocket] {
 
-            let remoteAddr = IP(webSocket.remoteAddress)
+            let remoteAddr = extractAddress(webSocket.remoteAddress)!
 
             let conn: NSDictionary = NSDictionary(objects: [uuid, remoteAddr], forKeys: ["uuid" as NSCopying, "remoteAddr" as NSCopying])
             let status: NSDictionary = NSDictionary(objects: ["onMessage", conn, message], forKeys: ["action" as NSCopying, "conn" as NSCopying, "msg" as NSCopying])
@@ -268,7 +302,7 @@ import Foundation
             commandDelegate?.send(pluginResult, callbackId: listenerCallbackId)
         } else {
             #if DEBUG
-                print("unknown socket")
+                print("WebSocketServer: unknown socket")
             #endif
         }
     }
@@ -276,14 +310,14 @@ import Foundation
     public func server(_ server: PSWebSocketServer!, webSocket: PSWebSocket!, didCloseWithCode code: Int, reason: String, wasClean: Bool) {
         
         #if DEBUG
-            print("WebSocket did close with code: \(code), reason: \(reason), wasClean: \(wasClean)")
+            print("WebSocketServer: WebSocket did close with code: \(code), reason: \(reason), wasClean: \(wasClean)")
         #endif
         
         if let uuid = socketsUUID[webSocket] {
             
-            let remoteAddr = remoteAddresses[webSocket] // IP(ws.remoteAddress) bad access error
+            let remoteAddr = remoteAddresses[webSocket] // extractAddress(webSocket.remoteAddress)! bad access error
             
-            let conn: NSDictionary = NSDictionary(objects: [uuid, remoteAddr!], forKeys: ["uuid" as NSCopying, "remoteAddr" as NSCopying])
+            let conn: NSDictionary = NSDictionary(objects: [uuid, remoteAddr], forKeys: ["uuid" as NSCopying, "remoteAddr" as NSCopying])
             let status: NSDictionary = NSDictionary(objects: ["onClose", conn, code, reason, wasClean], forKeys: ["action" as NSCopying, "conn" as NSCopying, "code" as NSCopying, "reason" as NSCopying, "wasClean" as NSCopying])
             let pluginResult = CDVPluginResult(status: CDVCommandStatus_OK, messageAs: status as! [AnyHashable: Any])
             pluginResult?.setKeepCallbackAs(true)
@@ -294,7 +328,7 @@ import Foundation
             remoteAddresses.removeValue(forKey: webSocket)
         } else {
             #if DEBUG
-                print("unknown socket")
+                print("WebSocketServer: unknown socket")
             #endif
         }
     }
@@ -302,87 +336,8 @@ import Foundation
     public func server(_ server: PSWebSocketServer!, webSocket: PSWebSocket!, didFailWithError error: Error!) {
         
         #if DEBUG
-            print("WebSocket did fail with error: \(error)")
+            print("WebSocketServer: WebSocket did fail with error: \(error)")
         #endif
-    }
-    
-    // http://dev.eltima.com/post/99996366184/using-bonjour-in-swift
-    fileprivate func IP(_ addressBytes: Data) -> String {
-        var inetAddress : sockaddr_in!
-        var inetAddress6 : sockaddr_in6!
-        //NSData’s bytes returns a read-only pointer to the receiver’s contents.
-        let inetAddressPointer = (addressBytes as NSData).bytes.bindMemory(to: sockaddr_in.self, capacity: addressBytes.count)
-        //Access the underlying raw memory
-        inetAddress = inetAddressPointer.pointee
-        if inetAddress.sin_family == __uint8_t(AF_INET) {
-        }
-        else {
-            if inetAddress.sin_family == __uint8_t(AF_INET6) {
-                let inetAddressPointer6 = (addressBytes as NSData).bytes.bindMemory(to: sockaddr_in6.self, capacity: addressBytes.count)
-                inetAddress6 = inetAddressPointer6.pointee
-                inetAddress = nil
-            }
-            else {
-                inetAddress = nil
-            }
-        }
-        var ipString : UnsafePointer<CChar>?
-        //static func alloc(num: Int) -> UnsafeMutablePointer
-        let ipStringBuffer = UnsafeMutablePointer<CChar>.allocate(capacity: Int(INET6_ADDRSTRLEN))
-        if inetAddress != nil {
-            var addr = inetAddress.sin_addr
-            ipString = inet_ntop(Int32(inetAddress.sin_family),
-                &addr,
-                ipStringBuffer,
-                __uint32_t (INET6_ADDRSTRLEN))
-        } else {
-            if inetAddress6 != nil {
-                var addr = inetAddress6.sin6_addr
-                ipString = inet_ntop(Int32(inetAddress6.sin6_family),
-                    &addr,
-                    ipStringBuffer,
-                    __uint32_t(INET6_ADDRSTRLEN))
-            }
-        }
-        if ipString != nil {
-            let ip = String(cString: ipString!)
-            return ip
-        }
-        return "0.0.0.0"
-    }
-    
-    // http://stackoverflow.com/questions/30748480/swift-get-devices-ip-address
-    fileprivate func getWiFiAddresses() -> [String] {
-        var addresses : [String] = []
-        // Get list of all interfaces on the local machine:
-        var ifaddr : UnsafeMutablePointer<ifaddrs>? = nil
-        if getifaddrs(&ifaddr) == 0 {
-            // For each interface ...
-            var ptr = ifaddr;
-            while (ptr != nil) {
-                let interface = ptr?.pointee
-                
-                // Check for IPv4 interface:
-                let addrFamily = interface?.ifa_addr.pointee.sa_family
-                if addrFamily == UInt8(AF_INET) {
-                    
-                    // Check interface name:
-                    if let name = String(validatingUTF8: (interface?.ifa_name)!) , name == "en0" {
-                        
-                        // Convert interface address to a human readable string:
-                        var addr = interface?.ifa_addr.pointee
-                        var hostname = [CChar](repeating: 0, count: Int(NI_MAXHOST))
-                        getnameinfo(&addr!, socklen_t((interface?.ifa_addr.pointee.sa_len)!),
-                            &hostname, socklen_t(hostname.count),
-                            nil, socklen_t(0), NI_NUMERICHOST)
-                        addresses.append(String(cString: hostname))
-                    }
-                }
-                ptr = ptr?.pointee.ifa_next;
-            }
-            freeifaddrs(ifaddr)
-        }
-        return addresses
     }
     
     fileprivate func getAcceptedProtocol(_ request: URLRequest) -> String? {
@@ -398,11 +353,16 @@ import Foundation
                 }
             }
             #if DEBUG
-                print("Sec-WebSocket-Protocol: \(secWebSocketProtocol)")
-                print("Accepted Protocol: \(acceptedProtocol)")
+                print("WebSocketServer: Sec-WebSocket-Protocol: \(secWebSocketProtocol)")
+                print("WebSocketServer: Accepted Protocol: \(acceptedProtocol)")
             #endif
         }
         return acceptedProtocol
+    }
+    
+    fileprivate func extractAddress(_ addressBytes:Data) -> String? {
+        let inetAddressPointer = (addressBytes as NSData).bytes.bindMemory(to: sockaddr.self, capacity: addressBytes.count)
+        return Interface.extractAddress(inetAddressPointer.pointee)
     }
     
 }

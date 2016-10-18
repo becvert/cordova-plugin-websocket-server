@@ -7,7 +7,14 @@
 
 package net.becvert.cordova;
 
-import android.util.Log;
+import java.io.IOException;
+import java.net.Inet6Address;
+import java.net.InetAddress;
+import java.net.NetworkInterface;
+import java.net.SocketException;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 
 import org.apache.cordova.CallbackContext;
 import org.apache.cordova.CordovaInterface;
@@ -19,15 +26,11 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import java.io.IOException;
-import java.net.Inet4Address;
-import java.net.InetAddress;
-import java.net.NetworkInterface;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
+import android.util.Log;
 
 public class WebSocketServerPlugin extends CordovaPlugin {
+
+    public static final String TAG = "WebSocketServer";
 
     private WebSocketServerImpl wsserver = null;
 
@@ -41,7 +44,7 @@ public class WebSocketServerPlugin extends CordovaPlugin {
     public void initialize(CordovaInterface cordova, CordovaWebView webView) {
         super.initialize(cordova, webView);
 
-        Log.v("WebSocketServer", "Initialized");
+        Log.v(TAG, "Initialized");
     }
 
     @Override
@@ -73,14 +76,21 @@ public class WebSocketServerPlugin extends CordovaPlugin {
                 @Override
                 public void run() {
 
-                    JSONArray ips = new JSONArray();
-                    List<String> interfaces = WebSocketServerPlugin.getInterfaces();
-                    for (String intf : interfaces) {
-                        ips.put(intf);
-                    }
+                    try {
+                        JSONObject addresses = getInterfaces();
 
-                    PluginResult result = new PluginResult(Status.OK, ips);
-                    callbackContext.sendPluginResult(result);
+                        Log.d(TAG, "Addresses: " + addresses);
+
+                        PluginResult result = new PluginResult(Status.OK, addresses);
+                        callbackContext.sendPluginResult(result);
+
+                    } catch (JSONException e) {
+                        e.printStackTrace();
+                        callbackContext.error("Error: " + e.getMessage());
+                    } catch (SocketException e) {
+                        e.printStackTrace();
+                        callbackContext.error("Error: " + e.getMessage());
+                    }
                 }
             });
 
@@ -124,13 +134,14 @@ public class WebSocketServerPlugin extends CordovaPlugin {
                             status.put("addr", wsserver.getAddress().getAddress().getHostAddress());
                             status.put("port", wsserver.getPort());
 
-                            Log.d("WebSocketServer", "start result: " + status.toString());
+                            Log.d(TAG, "start result: " + status.toString());
                             PluginResult result = new PluginResult(PluginResult.Status.OK, status);
                             result.setKeepCallback(true);
                             callbackContext.sendPluginResult(result);
 
                         } catch (JSONException e) {
                             e.printStackTrace();
+                            callbackContext.error("Error: " + e.getMessage());
                         }
                     }
                 });
@@ -150,27 +161,31 @@ public class WebSocketServerPlugin extends CordovaPlugin {
                             wsserver.stop();
                         } catch (IOException e) {
                             e.printStackTrace();
+                            callbackContext.error("Error: " + e.getMessage());
+                            return;
                         } catch (InterruptedException e) {
                             e.printStackTrace();
-                        } finally {
-
-                            try {
-                                JSONObject status = new JSONObject();
-                                status.put("action", "onStop");
-                                status.put("addr", wsserver.getAddress().getAddress().getHostAddress());
-                                status.put("port", wsserver.getPort());
-
-                                Log.d("WebSocketServer", "stop result: " + status.toString());
-                                PluginResult result = new PluginResult(PluginResult.Status.OK, status);
-                                result.setKeepCallback(false);
-                                wsserver.getCallbackContext().sendPluginResult(result);
-
-                            } catch (JSONException e) {
-                                e.printStackTrace();
-                            }
-
-                            wsserver = null;
+                            callbackContext.error("Error: " + e.getMessage());
+                            return;
                         }
+
+                        try {
+                            JSONObject status = new JSONObject();
+                            status.put("action", "onStop");
+                            status.put("addr", wsserver.getAddress().getAddress().getHostAddress());
+                            status.put("port", wsserver.getPort());
+
+                            Log.d(TAG, "stop result: " + status.toString());
+                            PluginResult result = new PluginResult(PluginResult.Status.OK, status);
+                            result.setKeepCallback(false);
+                            wsserver.getCallbackContext().sendPluginResult(result);
+
+                        } catch (JSONException e) {
+                            e.printStackTrace();
+                            callbackContext.error("Error: " + e.getMessage());
+                        }
+
+                        wsserver = null;
                     }
                 });
             }
@@ -214,37 +229,12 @@ public class WebSocketServerPlugin extends CordovaPlugin {
             }
 
         } else {
-            Log.e("WebSocketServer", "Invalid action: " + action);
+            Log.e(TAG, "Invalid action: " + action);
             callbackContext.error("Invalid action: " + action);
             return false;
         }
 
         return true;
-    }
-
-    /**
-     * Returns IP4 addresses.
-     * 
-     * @return IP4 addresses
-     */
-    public static List<String> getInterfaces() {
-        ArrayList<String> interfaces = new ArrayList<String>();
-        try {
-            List<NetworkInterface> intfs = Collections.list(NetworkInterface.getNetworkInterfaces());
-            for (NetworkInterface intf : intfs) {
-                List<InetAddress> addrs = Collections.list(intf.getInetAddresses());
-                for (InetAddress addr : addrs) {
-                    if (!addr.isLoopbackAddress()) {
-                        if (addr instanceof Inet4Address) {
-                            interfaces.add(addr.getHostAddress().toUpperCase());
-                        }
-                    }
-                }
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        return interfaces;
     }
 
     public static List<String> jsonArrayToArrayList(JSONArray jsonArray) throws JSONException {
@@ -256,6 +246,31 @@ public class WebSocketServerPlugin extends CordovaPlugin {
             }
         }
         return list;
+    }
+
+    // return IP4 & IP6 addresses
+    public static JSONObject getInterfaces() throws JSONException, SocketException {
+        JSONObject obj = new JSONObject();
+        JSONArray ipv4Addresses = new JSONArray();
+        JSONArray ipv6Addresses = new JSONArray();
+
+        List<NetworkInterface> intfs = Collections.list(NetworkInterface.getNetworkInterfaces());
+        for (NetworkInterface intf : intfs) {
+            List<InetAddress> addrs = Collections.list(intf.getInetAddresses());
+            for (InetAddress addr : addrs) {
+                if (!addr.isLoopbackAddress()) {
+                    if (addr instanceof Inet6Address) {
+                        ipv6Addresses.put(addr.getHostAddress());
+                    } else {
+                        ipv4Addresses.put(addr.getHostAddress());
+                    }
+                }
+            }
+        }
+
+        obj.put("ipv4Addresses", ipv4Addresses);
+        obj.put("ipv6Addresses", ipv6Addresses);
+        return obj;
     }
 
 }
