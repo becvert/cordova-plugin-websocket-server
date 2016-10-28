@@ -4,6 +4,13 @@ This plugin allows you to run a single, lightweight, barebone WebSocket Server f
 
 This is not a background service. When the cordova view is destroyed/terminated, the server is stopped.
 
+## Changelog ##
+
+#### 1.2.0
+
+- new onDidNotStart callback in the start method
+- getInterfaces returns ipv4 and ipv6 addresses
+
 ## Installation ##
 
 In your application project directory:
@@ -27,6 +34,9 @@ Binds to all available IPv4 network interfaces ('0.0.0.0').
     // WebSocket Server
     'onStart' : function(addr, port) {
         console.log('Listening on %s:%d', addr, port);
+    },
+    'onDidNotStart' :  function(addr, port) {
+        console.log('Failed to listen on %s:%d', addr, port);
     },
     'onStop' : function(addr, port) {
         console.log('Stopped listening on %s:%d', addr, port);
@@ -75,11 +85,12 @@ wsserver.close({'uuid':'8e176b14-a1af-70a7-3e3d-8b341977a16e'}, 4000, 'my reason
 ```
 
 #### `getInterfaces(callback)`
-Returns the available IPv4 network interfaces
+Returns the non-loopback IPv4 and IPv6 network interfaces.
 
 ```javascript
-wsserver.getInterfaces(function(ips) {
-    console.log(ips);
+wsserver.getInterfaces(function(result) {
+    console.log('ipv4', result.ipv4Addresses);
+    console.log('ipv6', result.ipv6Addresses);
 });
 ```
 
