@@ -40,16 +40,16 @@
         </config-file>
         <header-file src="src/ios/WebSocketServer-Bridging-Header.h"/>
         <source-file src="src/ios/WebSocketServer.swift"/>
-        <framework src="Foundation.framework" autogen="true"/>
-        <framework src="CFNetwork.framework" autogen="true"/>
-        <framework src="Security.framework" autogen="true"/>
-        <framework src="libz.tbd" autogen="true"/>
-        <header-file src="src/ios/vendor/headers/PSWebSocket.h" autogen="true"/>
-        <header-file src="src/ios/vendor/headers/PSWebSocketServer.h" autogen="true"/>
-        <header-file src="src/ios/vendor/headers/PSWebSocketTypes.h" autogen="true"/>
-        <source-file framework="true" src="src/ios/vendor/libPocketSocket.a" autogen="true"/>
+        <framework src="Foundation.framework"/>
+        <framework src="CFNetwork.framework"/>
+        <framework src="Security.framework"/>
+        <framework src="libz.tbd"/>
+        <header-file src="src/ios/vendor/headers/PSWebSocket.h"/>
+        <header-file src="src/ios/vendor/headers/PSWebSocketServer.h"/>
+        <header-file src="src/ios/vendor/headers/PSWebSocketTypes.h"/>
+        <source-file framework="true" src="src/ios/vendor/libPocketSocket.a"/>
         <!-- https://github.com/hibento/swift-netutils/blob/master/NetUtils/Interface.swift -->
-        <source-file src="src/ios/Interface.swift" autogen="true"/>
+        <source-file src="src/ios/Interface.swift" />
     </platform>
   
     <dependency id="cordova-plugin-add-swift-support"/>

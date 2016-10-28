@@ -46,7 +46,7 @@ import Foundation
                     if intf.family == .ipv6 {
                         ipv6Addresses.append(intf.address!)
                     } else if intf.family == .ipv4 {
-                    ipv4Addresses.append(intf.address!)
+                        ipv4Addresses.append(intf.address!)
                     }
                 }
             }
@@ -267,8 +267,11 @@ import Foundation
         UUIDSockets[uuid] = webSocket
         socketsUUID[webSocket] = uuid
         
-        let remoteAddr = extractAddress(webSocket.remoteAddress)!
-        remoteAddresses[webSocket] = remoteAddr
+        var remoteAddr = ""
+        if let addr = extractAddress(webSocket.remoteAddress) {
+            remoteAddr = addr
+            remoteAddresses[webSocket] = addr
+        }
         
         var acceptedProtocol = ""
         if (protocols != nil) {
@@ -293,7 +296,11 @@ import Foundation
         
         if let uuid = socketsUUID[webSocket] {
 
-            let remoteAddr = extractAddress(webSocket.remoteAddress)!
+            var remoteAddr = ""
+            if let addr = extractAddress(webSocket.remoteAddress) {
+                remoteAddr = addr
+                remoteAddresses[webSocket] = addr
+            }
 
             let conn: NSDictionary = NSDictionary(objects: [uuid, remoteAddr], forKeys: ["uuid" as NSCopying, "remoteAddr" as NSCopying])
             let status: NSDictionary = NSDictionary(objects: ["onMessage", conn, message], forKeys: ["action" as NSCopying, "conn" as NSCopying, "msg" as NSCopying])
@@ -317,7 +324,7 @@ import Foundation
             
             let remoteAddr = remoteAddresses[webSocket] // extractAddress(webSocket.remoteAddress)! bad access error
             
-            let conn: NSDictionary = NSDictionary(objects: [uuid, remoteAddr], forKeys: ["uuid" as NSCopying, "remoteAddr" as NSCopying])
+            let conn: NSDictionary = NSDictionary(objects: [uuid, remoteAddr!], forKeys: ["uuid" as NSCopying, "remoteAddr" as NSCopying])
             let status: NSDictionary = NSDictionary(objects: ["onClose", conn, code, reason, wasClean], forKeys: ["action" as NSCopying, "conn" as NSCopying, "code" as NSCopying, "reason" as NSCopying, "wasClean" as NSCopying])
             let pluginResult = CDVPluginResult(status: CDVCommandStatus_OK, messageAs: status as! [AnyHashable: Any])
             pluginResult?.setKeepCallbackAs(true)
@@ -361,8 +368,12 @@ import Foundation
     }
     
     fileprivate func extractAddress(_ addressBytes:Data) -> String? {
-        let inetAddressPointer = (addressBytes as NSData).bytes.bindMemory(to: sockaddr.self, capacity: addressBytes.count)
-        return Interface.extractAddress(inetAddressPointer.pointee)
+        var addr = (addressBytes as NSData).bytes.load(as: sockaddr.self)
+        var hostname = [CChar](repeating: 0, count: Int(NI_MAXHOST))
+        if (getnameinfo(&addr, socklen_t(addr.sa_len), &hostname,
+                        socklen_t(hostname.count), nil, socklen_t(0), NI_NUMERICHOST) == 0) {
+            return String(cString: hostname)
+        }
+        return nil
     }
-    
 }

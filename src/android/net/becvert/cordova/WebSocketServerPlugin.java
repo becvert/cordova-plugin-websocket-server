@@ -8,6 +8,7 @@
 package net.becvert.cordova;
 
 import java.io.IOException;
+import java.net.Inet4Address;
 import java.net.Inet6Address;
 import java.net.InetAddress;
 import java.net.NetworkInterface;
@@ -261,7 +262,7 @@ public class WebSocketServerPlugin extends CordovaPlugin {
                 if (!addr.isLoopbackAddress()) {
                     if (addr instanceof Inet6Address) {
                         ipv6Addresses.put(addr.getHostAddress());
-                    } else {
+                    } else if (addr instanceof Inet4Address) {
                         ipv4Addresses.put(addr.getHostAddress());
                     }
                 }
