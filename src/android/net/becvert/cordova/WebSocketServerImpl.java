@@ -7,6 +7,7 @@
 
 package net.becvert.cordova;
 
+import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -234,22 +235,29 @@ public class WebSocketServerImpl extends WebSocketServer {
         Log.v(WebSocketServerPlugin.TAG, "onerror");
 
         if (webSocket == null) {
-            try {
-                JSONObject status = new JSONObject();
-                status.put("action", "onDidNotStart");
-                status.put("addr", this.getAddress().getAddress().getHostAddress());
-                status.put("port", this.getPort());
+            // server error
+            if (exception != null) {
+                exception.printStackTrace();
+                if (exception instanceof IOException) {
+                    try {
+                        JSONObject status = new JSONObject();
+                        status.put("action", "onDidNotStart");
+                        status.put("addr", this.getAddress().getAddress().getHostAddress());
+                        status.put("port", this.getPort());
 
-                Log.d(WebSocketServerPlugin.TAG, "onerror result: " + status.toString());
-                PluginResult result = new PluginResult(PluginResult.Status.OK, status);
-                result.setKeepCallback(false);
-                this.callbackContext.sendPluginResult(result);
+                        Log.d(WebSocketServerPlugin.TAG, "onerror result: " + status.toString());
+                        PluginResult result = new PluginResult(PluginResult.Status.OK, status);
+                        result.setKeepCallback(false);
+                        this.callbackContext.sendPluginResult(result);
 
-            } catch (JSONException e) {
-                e.printStackTrace();
-                callbackContext.error("Error: " + e.getMessage());
+                    } catch (JSONException e) {
+                        e.printStackTrace();
+                        callbackContext.error("Error: " + e.getMessage());
+                    }
+                } else {
+                    callbackContext.error("Error: " + exception.getMessage());
+                }
             }
-
             this.active = false;
             this.callbackContext = null;
             this.UUIDSockets = null;
