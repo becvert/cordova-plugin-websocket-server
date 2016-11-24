@@ -6,6 +6,10 @@ This is not a background service. When the cordova view is destroyed/terminated,
 
 ## Changelog ##
 
+#### 1.2.1
+
+- fixed error retrieving URL query String for iOS
+
 #### 1.2.0
 
 - new onDidNotStart callback in the start method
