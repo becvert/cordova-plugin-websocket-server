@@ -22,13 +22,8 @@ var WebSocketServer = {
         return exec(function(result) {
             switch (result.action) {
             case 'onStart':
-            case 'onStop':
-                var callback = options[result.action];
-                if (callback) {
-                    callback(result.addr, result.port);
-                }
-                break;
             case 'onDidNotStart':
+            case 'onStop':
                 var callback = options[result.action];
                 if (callback) {
                     callback(result.addr, result.port);
