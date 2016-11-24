@@ -279,8 +279,12 @@ import Foundation
         }
         
         let httpFields = webSocket.urlRequest.allHTTPHeaderFields!
-        let resource = String(cString: (webSocket.urlRequest.url!.query?.cString(using: String.Encoding.utf8))! )
-		
+        
+        var resource = ""
+        if (webSocket.urlRequest.url!.query != nil) {
+            resource = String(cString: (webSocket.urlRequest.url!.query?.cString(using: String.Encoding.utf8))! )
+        }
+        
         let conn: NSDictionary = NSDictionary(objects: [uuid, remoteAddr, acceptedProtocol, httpFields, resource], forKeys: ["uuid" as NSCopying, "remoteAddr" as NSCopying, "acceptedProtocol" as NSCopying, "httpFields" as NSCopying, "resource" as NSCopying])
         let status: NSDictionary = NSDictionary(objects: ["onOpen", conn], forKeys: ["action" as NSCopying, "conn" as NSCopying])
         let pluginResult = CDVPluginResult(status: CDVCommandStatus_OK, messageAs: status as! [AnyHashable: Any])
