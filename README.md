@@ -6,6 +6,10 @@ This is not a background service. When the cordova view is destroyed/terminated,
 
 ## Changelog ##
 
+#### X.X.X
+
+- getInterfaces returns the ipv4 and ipv6 addresses organized by network interface
+
 #### 1.2.1
 
 - fixed error retrieving URL query String for iOS
@@ -93,8 +97,13 @@ Returns the non-loopback IPv4 and IPv6 network interfaces.
 
 ```javascript
 wsserver.getInterfaces(function(result) {
-    console.log('ipv4', result.ipv4Addresses);
-    console.log('ipv6', result.ipv6Addresses);
+    for (var interface in result) {
+        if (result.hasOwnProperty(interface)) {
+            console.log('interface', interface);
+            console.log('ipv4', result[interface].ipv4Addresses);
+            console.log('ipv6', result[interface].ipv6Addresses);
+        }
+    }
 });
 ```
 
