@@ -1,7 +1,7 @@
 /*
  * Cordova WebSocket Server Plugin
  *
- * WebSocket Server plugin for Cordova/Phonegap 
+ * WebSocket Server plugin for Cordova/Phonegap
  * by Sylvain Brejeon
  */
 
@@ -252,25 +252,36 @@ public class WebSocketServerPlugin extends CordovaPlugin {
     // return IP4 & IP6 addresses
     public static JSONObject getInterfaces() throws JSONException, SocketException {
         JSONObject obj = new JSONObject();
-        JSONArray ipv4Addresses = new JSONArray();
-        JSONArray ipv6Addresses = new JSONArray();
+        JSONObject intfobj;
+        JSONArray ipv4Addresses;
+        JSONArray ipv6Addresses;
 
         List<NetworkInterface> intfs = Collections.list(NetworkInterface.getNetworkInterfaces());
         for (NetworkInterface intf : intfs) {
-            List<InetAddress> addrs = Collections.list(intf.getInetAddresses());
-            for (InetAddress addr : addrs) {
-                if (!addr.isLoopbackAddress()) {
-                    if (addr instanceof Inet6Address) {
-                        ipv6Addresses.put(addr.getHostAddress());
-                    } else if (addr instanceof Inet4Address) {
-                        ipv4Addresses.put(addr.getHostAddress());
+            if (!intf.isLoopback()) {
+                intfobj = new JSONObject();
+                ipv4Addresses = new JSONArray();
+                ipv6Addresses = new JSONArray();
+
+                List<InetAddress> addrs = Collections.list(intf.getInetAddresses());
+                for (InetAddress addr : addrs) {
+                    if (!addr.isLoopbackAddress()) {
+                        if (addr instanceof Inet6Address) {
+                            ipv6Addresses.put(addr.getHostAddress());
+                        } else if (addr instanceof Inet4Address) {
+                            ipv4Addresses.put(addr.getHostAddress());
+                        }
                     }
+                }
+
+                if ((ipv4Addresses.length() > 0) || (ipv6Addresses.length() > 0)) {
+                    intfobj.put("ipv4Addresses", ipv4Addresses);
+                    intfobj.put("ipv6Addresses", ipv6Addresses);
+                    obj.put(intf.getName(), intfobj);
                 }
             }
         }
 
-        obj.put("ipv4Addresses", ipv4Addresses);
-        obj.put("ipv6Addresses", ipv6Addresses);
         return obj;
     }
 
