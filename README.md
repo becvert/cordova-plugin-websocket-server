@@ -6,17 +6,18 @@ This is not a background service. When the cordova view is destroyed/terminated,
 
 ## Changelog ##
 
-#### X.X.X
+#### 1.2.2
 
+- IPv6 support on iOS [30a98b0](https://github.com/couchbasedeps/PocketSocket/commit/30a98b0c62763e11ee5b3e7097a8c8b4b66674f9)
 - getInterfaces returns the ipv4 and ipv6 addresses organized by network interface
 
 #### 1.2.1
 
-- fixed error retrieving URL query String for iOS
+- fixed crash on iOS (error retrieving URL query string)
 
 #### 1.2.0
 
-- new onDidNotStart callback in the start method
+- new onDidNotStart handler in the start method
 - getInterfaces returns ipv4 and ipv6 addresses
 
 ## Installation ##
@@ -35,7 +36,7 @@ var wsserver = cordova.plugins.wsserver;
 
 #### `start(port, options)`
 Starts the server on the given port (0 means any free port).
-Binds to all available IPv4 network interfaces ('0.0.0.0').
+Binds to all available network interfaces ('0.0.0.0').
 
 ```javascript
  wsserver.start(port, {
