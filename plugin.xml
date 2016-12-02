@@ -2,7 +2,7 @@
 <plugin xmlns="http://apache.org/cordova/ns/plugins/1.0"
     xmlns:android="http://schemas.android.com/apk/res/android"
     id="cordova-plugin-websocket-server"
-    version="1.2.2">
+    version="1.3.0">
     <name>WebSocket Server</name>
     <description>WebSocket Server plugin for Cordova/Phonegap</description>
     <author>Sylvain Brejeon</author>
@@ -29,7 +29,7 @@
         </config-file>
         <source-file src="src/android/net/becvert/cordova/WebSocketServerPlugin.java" target-dir="src/net/becvert/cordova"/>
         <source-file src="src/android/net/becvert/cordova/WebSocketServerImpl.java" target-dir="src/net/becvert/cordova"/>
-        <framework src="org.java-websocket:Java-WebSocket:1.3.0" />
+        <framework src="com.pusher:java-websocket:1.4.1" />
     </platform>
   
     <platform name="ios">

@@ -12,6 +12,8 @@ var fail = function(o) {
     console.error("Error " + JSON.stringify(o));
 };
 
+var connections = null;
+
 var WebSocketServer = {
 
     getInterfaces : function(success, failure) {
@@ -28,23 +30,33 @@ var WebSocketServer = {
                 if (callback) {
                     callback(result.addr, result.port);
                 }
+                connections = [];
                 break;
             case 'onOpen':
+                var conn = result.conn;
+                connections[conn.uuid] = conn;
                 var callback = options[result.action];
                 if (callback) {
-                    callback(result.conn);
+                    callback(conn);
                 }
                 break;
             case 'onMessage':
-                var callback = options[result.action];
-                if (callback) {
-                    callback(result.conn, result.msg);
+                var conn = connections[result.uuid];
+                if (conn) {
+                    var callback = options[result.action];
+                    if (callback) {
+                        callback(conn, result.msg);
+                    }
                 }
                 break;
             case 'onClose':
-                var callback = options[result.action];
-                if (callback) {
-                    callback(result.conn, result.code, result.reason, result.wasClean);
+                var conn = connections[result.uuid];
+                if (conn) {
+                    delete connections[conn.uuid];
+                    var callback = options[result.action];
+                    if (callback) {
+                        callback(conn, result.code, result.reason, result.wasClean);
+                    }
                 }
                 break;
             default:

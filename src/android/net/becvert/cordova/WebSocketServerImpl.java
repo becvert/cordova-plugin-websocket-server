@@ -17,15 +17,16 @@ import java.util.UUID;
 
 import org.apache.cordova.CallbackContext;
 import org.apache.cordova.PluginResult;
-import org.java_websocket.WebSocket;
-import org.java_websocket.drafts.Draft;
-import org.java_websocket.exceptions.InvalidDataException;
-import org.java_websocket.framing.CloseFrame;
-import org.java_websocket.handshake.ClientHandshake;
-import org.java_websocket.handshake.ServerHandshakeBuilder;
-import org.java_websocket.server.WebSocketServer;
 import org.json.JSONException;
 import org.json.JSONObject;
+
+import com.pusher.java_websocket.WebSocket;
+import com.pusher.java_websocket.drafts.Draft;
+import com.pusher.java_websocket.exceptions.InvalidDataException;
+import com.pusher.java_websocket.framing.CloseFrame;
+import com.pusher.java_websocket.handshake.ClientHandshake;
+import com.pusher.java_websocket.handshake.ServerHandshakeBuilder;
+import com.pusher.java_websocket.server.WebSocketServer;
 
 import android.util.Log;
 
@@ -165,13 +166,9 @@ public class WebSocketServerImpl extends WebSocketServer {
 
         if (uuid != null) {
             try {
-                JSONObject conn = new JSONObject();
-                conn.put("uuid", uuid);
-                conn.put("remoteAddr", webSocket.getRemoteSocketAddress().getAddress().getHostAddress());
-
                 JSONObject status = new JSONObject();
                 status.put("action", "onMessage");
-                status.put("conn", conn);
+                status.put("uuid", uuid);
                 status.put("msg", msg);
 
                 Log.d(WebSocketServerPlugin.TAG, "onmessage result: " + status.toString());
@@ -199,13 +196,9 @@ public class WebSocketServerImpl extends WebSocketServer {
 
             if (uuid != null) {
                 try {
-                    JSONObject conn = new JSONObject();
-                    conn.put("uuid", uuid);
-                    conn.put("remoteAddr", webSocket.getRemoteSocketAddress().getAddress().getHostAddress());
-
                     JSONObject status = new JSONObject();
                     status.put("action", "onClose");
-                    status.put("conn", conn);
+                    status.put("uuid", uuid);
                     status.put("code", code);
                     status.put("reason", reason);
                     status.put("wasClean", remote);
@@ -234,35 +227,41 @@ public class WebSocketServerImpl extends WebSocketServer {
     public void onError(WebSocket webSocket, Exception exception) {
         Log.v(WebSocketServerPlugin.TAG, "onerror");
 
+        if (exception != null) {
+            Log.e(WebSocketServerPlugin.TAG, "onerror: " + exception.getMessage());
+            exception.printStackTrace();
+        }
+
         if (webSocket == null) {
             // server error
-            if (exception != null) {
-                exception.printStackTrace();
-                if (exception instanceof IOException) {
-                    try {
-                        JSONObject status = new JSONObject();
-                        status.put("action", "onDidNotStart");
-                        status.put("addr", this.getAddress().getAddress().getHostAddress());
-                        status.put("port", this.getPort());
+            if (exception instanceof IOException) {
+                try {
+                    JSONObject status = new JSONObject();
+                    status.put("action", "onDidNotStart");
+                    status.put("addr", this.getAddress().getAddress().getHostAddress());
+                    status.put("port", this.getPort());
 
-                        Log.d(WebSocketServerPlugin.TAG, "onerror result: " + status.toString());
-                        PluginResult result = new PluginResult(PluginResult.Status.OK, status);
-                        result.setKeepCallback(false);
-                        this.callbackContext.sendPluginResult(result);
+                    Log.d(WebSocketServerPlugin.TAG, "onerror result: " + status.toString());
+                    PluginResult result = new PluginResult(PluginResult.Status.OK, status);
+                    result.setKeepCallback(false);
+                    this.callbackContext.sendPluginResult(result);
 
-                    } catch (JSONException e) {
-                        e.printStackTrace();
-                        callbackContext.error("Error: " + e.getMessage());
-                    }
-                } else {
-                    callbackContext.error("Error: " + exception.getMessage());
+                } catch (JSONException e) {
+                    e.printStackTrace();
+                    callbackContext.error("Error: " + e.getMessage());
                 }
+            } else if (exception != null) {
+                callbackContext.error("Error: " + exception.getMessage());
             }
             this.active = false;
             this.callbackContext = null;
             this.UUIDSockets = null;
             this.socketsUUID = null;
-
+        } else {
+            // fatal error
+            if (webSocket.isOpen()) {
+                webSocket.close(CloseFrame.UNEXPECTED_CONDITION);
+            }
         }
 
     }

@@ -15,13 +15,11 @@ import Foundation
     fileprivate var protocols: [String]?
     fileprivate var UUIDSockets: [String: PSWebSocket]!
     fileprivate var socketsUUID: [PSWebSocket: String]!
-    fileprivate var remoteAddresses: [PSWebSocket: String]!
     fileprivate var listenerCallbackId: String?
 
     override public func pluginInitialize() {
         UUIDSockets  = [:]
         socketsUUID = [:]
-        remoteAddresses = [:]
     }
 
     override public func onAppTerminate() {
@@ -30,7 +28,6 @@ import Foundation
             wsserver = nil
             UUIDSockets.removeAll()
             socketsUUID.removeAll()
-            remoteAddresses.removeAll()
         }
     }
 
@@ -211,7 +208,6 @@ import Foundation
         wsserver = nil
         UUIDSockets.removeAll()
         socketsUUID.removeAll()
-        remoteAddresses.removeAll()
 
         let status: NSDictionary = NSDictionary(objects: ["onStop", "0.0.0.0", Int(server.realPort)], forKeys: ["action" as NSCopying, "addr" as NSCopying, "port" as NSCopying])
         let pluginResult = CDVPluginResult(status: CDVCommandStatus_OK, messageAs: status as! [AnyHashable: Any])
@@ -228,7 +224,6 @@ import Foundation
         wsserver = nil
         UUIDSockets.removeAll()
         socketsUUID.removeAll()
-        remoteAddresses.removeAll()
 
         let status: NSDictionary = NSDictionary(objects: ["onDidNotStart", "0.0.0.0", port!], forKeys: ["action" as NSCopying, "addr" as NSCopying, "port" as NSCopying])
         let pluginResult = CDVPluginResult(status: CDVCommandStatus_OK, messageAs: status as! [AnyHashable: Any])
@@ -283,11 +278,7 @@ import Foundation
         UUIDSockets[uuid] = webSocket
         socketsUUID[webSocket] = uuid
 
-        var remoteAddr = ""
-        if let addr = extractAddress(webSocket.remoteAddress) {
-            remoteAddr = addr
-            remoteAddresses[webSocket] = addr
-        }
+        let remoteAddr = webSocket.remoteHost!
 
         var acceptedProtocol = ""
         if (protocols != nil) {
@@ -315,15 +306,7 @@ import Foundation
         #endif
 
         if let uuid = socketsUUID[webSocket] {
-
-            var remoteAddr = ""
-            if let addr = extractAddress(webSocket.remoteAddress) {
-                remoteAddr = addr
-                remoteAddresses[webSocket] = addr
-            }
-
-            let conn: NSDictionary = NSDictionary(objects: [uuid, remoteAddr], forKeys: ["uuid" as NSCopying, "remoteAddr" as NSCopying])
-            let status: NSDictionary = NSDictionary(objects: ["onMessage", conn, message], forKeys: ["action" as NSCopying, "conn" as NSCopying, "msg" as NSCopying])
+            let status: NSDictionary = NSDictionary(objects: ["onMessage", uuid, message], forKeys: ["action" as NSCopying, "uuid" as NSCopying, "msg" as NSCopying])
             let pluginResult = CDVPluginResult(status: CDVCommandStatus_OK, messageAs: status as! [AnyHashable: Any])
             pluginResult?.setKeepCallbackAs(true)
             commandDelegate?.send(pluginResult, callbackId: listenerCallbackId)
@@ -341,18 +324,13 @@ import Foundation
         #endif
 
         if let uuid = socketsUUID[webSocket] {
-
-            let remoteAddr = remoteAddresses[webSocket] // extractAddress(webSocket.remoteAddress)! bad access error
-
-            let conn: NSDictionary = NSDictionary(objects: [uuid, remoteAddr!], forKeys: ["uuid" as NSCopying, "remoteAddr" as NSCopying])
-            let status: NSDictionary = NSDictionary(objects: ["onClose", conn, code, reason, wasClean], forKeys: ["action" as NSCopying, "conn" as NSCopying, "code" as NSCopying, "reason" as NSCopying, "wasClean" as NSCopying])
+            let status: NSDictionary = NSDictionary(objects: ["onClose", uuid, code, reason, wasClean], forKeys: ["action" as NSCopying, "uuid" as NSCopying, "code" as NSCopying, "reason" as NSCopying, "wasClean" as NSCopying])
             let pluginResult = CDVPluginResult(status: CDVCommandStatus_OK, messageAs: status as! [AnyHashable: Any])
             pluginResult?.setKeepCallbackAs(true)
             commandDelegate?.send(pluginResult, callbackId: listenerCallbackId)
 
             socketsUUID.removeValue(forKey: webSocket)
             UUIDSockets.removeValue(forKey: uuid)
-            remoteAddresses.removeValue(forKey: webSocket)
         } else {
             #if DEBUG
                 print("WebSocketServer: unknown socket")
@@ -365,6 +343,10 @@ import Foundation
         #if DEBUG
             print("WebSocketServer: WebSocket did fail with error: \(error)")
         #endif
+
+        if (webSocket.readyState == PSWebSocketReadyState.open) {
+            webSocket.close(withCode: 1011, reason: "")
+        }
     }
 
     fileprivate func getAcceptedProtocol(_ request: URLRequest) -> String? {
@@ -387,13 +369,4 @@ import Foundation
         return acceptedProtocol
     }
 
-    fileprivate func extractAddress(_ addressBytes:Data) -> String? {
-        var addr = (addressBytes as NSData).bytes.load(as: sockaddr.self)
-        var hostname = [CChar](repeating: 0, count: Int(NI_MAXHOST))
-        if (getnameinfo(&addr, socklen_t(addr.sa_len), &hostname,
-                        socklen_t(hostname.count), nil, socklen_t(0), NI_NUMERICHOST) == 0) {
-            return String(cString: hostname)
-        }
-        return nil
-    }
 }

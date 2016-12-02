@@ -159,11 +159,7 @@ public class WebSocketServerPlugin extends CordovaPlugin {
                     public void run() {
 
                         try {
-                            wsserver.stop();
-                        } catch (IOException e) {
-                            e.printStackTrace();
-                            callbackContext.error("Error: " + e.getMessage());
-                            return;
+                            wsserver.stop(2000);
                         } catch (InterruptedException e) {
                             e.printStackTrace();
                             callbackContext.error("Error: " + e.getMessage());
