@@ -6,14 +6,17 @@ This is not a background service. When the cordova view is destroyed/terminated,
 
 ## Changelog ##
 
-#### 1.2.2
+#### 1.3.0
 
-- IPv6 support on iOS [30a98b0](https://github.com/couchbasedeps/PocketSocket/commit/30a98b0c62763e11ee5b3e7097a8c8b4b66674f9)
 - getInterfaces returns the ipv4 and ipv6 addresses organized by network interface
+- onOpen, onMessage and onClose handlers share the same `conn` instances
+- [Android] switching to [com.pusher:java-websocket:1.4.1](https://github.com/pusher/java-websocket)
+- [iOS] IPv6 support [30a98b0](https://github.com/couchbasedeps/PocketSocket/commit/30a98b0c62763e11ee5b3e7097a8c8b4b66674f9)
+
 
 #### 1.2.1
 
-- fixed crash on iOS (error retrieving URL query string)
+- [iOS] fixed crash (error retrieving URL query string)
 
 #### 1.2.0
 
