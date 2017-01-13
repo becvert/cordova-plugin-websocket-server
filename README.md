@@ -6,6 +6,10 @@ This is not a background service. When the cordova view is destroyed/terminated,
 
 ## Changelog ##
 
+#### 1.3.1
+
+- adding state 'open' or 'close' to the `conn` object
+
 #### 1.3.0
 
 - getInterfaces returns the ipv4 and ipv6 addresses organized by network interface
