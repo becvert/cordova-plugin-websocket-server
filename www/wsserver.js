@@ -34,6 +34,7 @@ var WebSocketServer = {
                 break;
             case 'onOpen':
                 var conn = result.conn;
+                conn.state = 'open';
                 connections[conn.uuid] = conn;
                 var callback = options[result.action];
                 if (callback) {
@@ -51,6 +52,7 @@ var WebSocketServer = {
                 break;
             case 'onClose':
                 var conn = connections[result.uuid];
+                conn.state = 'closed';
                 if (conn) {
                     delete connections[conn.uuid];
                     var callback = options[result.action];
