@@ -32,7 +32,7 @@ import android.util.Log;
 
 public class WebSocketServerImpl extends WebSocketServer {
 
-    protected boolean active = true;
+    public boolean failed = false;
 
     private CallbackContext callbackContext;
 
@@ -153,7 +153,7 @@ public class WebSocketServerImpl extends WebSocketServer {
             callbackContext.sendPluginResult(result);
 
         } catch (JSONException e) {
-            e.printStackTrace();
+            Log.e(WebSocketServerPlugin.TAG, e.getMessage(), e);
             callbackContext.error("Error: " + e.getMessage());
         }
     }
@@ -177,7 +177,7 @@ public class WebSocketServerImpl extends WebSocketServer {
                 callbackContext.sendPluginResult(result);
 
             } catch (JSONException e) {
-                e.printStackTrace();
+                Log.e(WebSocketServerPlugin.TAG, e.getMessage(), e);
                 callbackContext.error("Error: " + e.getMessage());
             }
         } else {
@@ -209,7 +209,7 @@ public class WebSocketServerImpl extends WebSocketServer {
                     callbackContext.sendPluginResult(result);
 
                 } catch (JSONException e) {
-                    e.printStackTrace();
+                    Log.e(WebSocketServerPlugin.TAG, e.getMessage(), e);
                     callbackContext.error("Error: " + e.getMessage());
                 } finally {
                     socketsUUID.remove(webSocket);
@@ -234,29 +234,42 @@ public class WebSocketServerImpl extends WebSocketServer {
 
         if (webSocket == null) {
             // server error
-            if (exception instanceof IOException) {
+            try {
                 try {
-                    JSONObject status = new JSONObject();
-                    status.put("action", "onDidNotStart");
-                    status.put("addr", this.getAddress().getAddress().getHostAddress());
-                    status.put("port", this.getPort());
-
-                    Log.d(WebSocketServerPlugin.TAG, "onerror result: " + status.toString());
-                    PluginResult result = new PluginResult(PluginResult.Status.OK, status);
-                    result.setKeepCallback(false);
-                    this.callbackContext.sendPluginResult(result);
-
-                } catch (JSONException e) {
-                    e.printStackTrace();
-                    callbackContext.error("Error: " + e.getMessage());
+                    // normally already stopped. just making sure!
+                    this.stop();
+                } catch (IOException e) {
+                    // fail silently
+                    Log.e(WebSocketServerPlugin.TAG, e.getMessage(), e);
+                } catch (InterruptedException e) {
+                    // fail silently
+                    Log.e(WebSocketServerPlugin.TAG, e.getMessage(), e);
                 }
-            } else if (exception != null) {
-                callbackContext.error("Error: " + exception.getMessage());
+
+                JSONObject status = new JSONObject();
+                status.put("action", "onFailure");
+                status.put("addr", this.getAddress().getAddress().getHostAddress());
+                status.put("port", this.getPort());
+                if (exception != null) {
+                    status.put("reason", exception.getMessage());
+                }
+
+                Log.d(WebSocketServerPlugin.TAG, "onerror result: " + status.toString());
+                PluginResult result = new PluginResult(PluginResult.Status.OK, status);
+                result.setKeepCallback(false);
+                callbackContext.sendPluginResult(result);
+
+            } catch (JSONException e) {
+                Log.e(WebSocketServerPlugin.TAG, e.getMessage(), e);
+                callbackContext.error("Error: " + e.getMessage());
+
+            } finally {
+                failed = true;
+                callbackContext = null;
+                UUIDSockets = null;
+                socketsUUID = null;
             }
-            this.active = false;
-            this.callbackContext = null;
-            this.UUIDSockets = null;
-            this.socketsUUID = null;
+
         } else {
             // fatal error
             if (webSocket.isOpen()) {
@@ -271,7 +284,7 @@ public class WebSocketServerImpl extends WebSocketServer {
 
         WebSocket webSocket = UUIDSockets.get(uuid);
 
-        if (webSocket != null) {
+        if (webSocket != null && !this.failed) {
             webSocket.send(msg);
         } else {
             Log.d(WebSocketServerPlugin.TAG, "send: unknown websocket");
@@ -284,7 +297,7 @@ public class WebSocketServerImpl extends WebSocketServer {
 
         WebSocket webSocket = UUIDSockets.get(uuid);
 
-        if (webSocket != null) {
+        if (webSocket != null && !this.failed) {
             if (code == -1) {
                 webSocket.close(CloseFrame.NORMAL);
             } else {

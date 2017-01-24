@@ -15,7 +15,8 @@ import Foundation
     fileprivate var protocols: [String]?
     fileprivate var UUIDSockets: [String: PSWebSocket]!
     fileprivate var socketsUUID: [PSWebSocket: String]!
-    fileprivate var listenerCallbackId: String?
+    fileprivate var startCallbackId: String?
+    fileprivate var stopCallbackId: String?
 
     override public func pluginInitialize() {
         UUIDSockets  = [:]
@@ -89,15 +90,24 @@ import Foundation
         #endif
 
         if wsserver != nil {
+            let pluginResult = CDVPluginResult(status: CDVCommandStatus_ERROR, messageAs: "Server already running")
+            self.commandDelegate?.send(pluginResult, callbackId: command.callbackId)
             return
         }
 
         port = command.argument(at: 0) as? Int
+        
+        if port! < 0 || port! > 65535 {
+            let pluginResult = CDVPluginResult(status: CDVCommandStatus_ERROR, messageAs: "Port number error")
+            self.commandDelegate?.send(pluginResult, callbackId: command.callbackId)
+            return
+        }
+        
         origins = command.argument(at: 1) as? [String]
         protocols = command.argument(at: 2) as? [String]
 
         if let server = PSWebSocketServer(host: nil, port: UInt(port!)) {
-            listenerCallbackId = command.callbackId
+            startCallbackId = command.callbackId
             wsserver = server
             server.delegate = self
 
@@ -116,13 +126,22 @@ import Foundation
         #if DEBUG
             print("WebSocketServer: stop")
         #endif
+        
+        if wsserver == nil {
+            let pluginResult = CDVPluginResult(status: CDVCommandStatus_ERROR, messageAs: "Server is not running")
+            self.commandDelegate?.send(pluginResult, callbackId: command.callbackId)
+            return
+        }
 
         if let server = wsserver {
+            stopCallbackId = command.callbackId
 
             commandDelegate?.run(inBackground: {
                 server.stop()
             })
-
+            
+            let pluginResult = CDVPluginResult(status: CDVCommandStatus_NO_RESULT)
+            pluginResult?.setKeepCallbackAs(true)
         }
     }
 
@@ -193,10 +212,10 @@ import Foundation
             print("WebSocketServer: Server did start…")
         #endif
 
-        let status: NSDictionary = NSDictionary(objects: ["onStart", "0.0.0.0", Int(server.realPort)], forKeys: ["action" as NSCopying, "addr" as NSCopying, "port" as NSCopying])
+        let status: NSDictionary = NSDictionary(objects: ["0.0.0.0", Int(server.realPort)], forKeys: ["addr" as NSCopying, "port" as NSCopying])
         let pluginResult = CDVPluginResult(status: CDVCommandStatus_OK, messageAs: status as! [AnyHashable: Any])
         pluginResult?.setKeepCallbackAs(true)
-        commandDelegate?.send(pluginResult, callbackId: listenerCallbackId)
+        commandDelegate?.send(pluginResult, callbackId: startCallbackId)
     }
 
     public func serverDidStop(_ server: PSWebSocketServer!) {
@@ -209,10 +228,10 @@ import Foundation
         UUIDSockets.removeAll()
         socketsUUID.removeAll()
 
-        let status: NSDictionary = NSDictionary(objects: ["onStop", "0.0.0.0", Int(server.realPort)], forKeys: ["action" as NSCopying, "addr" as NSCopying, "port" as NSCopying])
+        let status: NSDictionary = NSDictionary(objects: ["0.0.0.0", Int(server.realPort)], forKeys: ["addr" as NSCopying, "port" as NSCopying])
         let pluginResult = CDVPluginResult(status: CDVCommandStatus_OK, messageAs: status as! [AnyHashable: Any])
         pluginResult?.setKeepCallbackAs(false)
-        commandDelegate?.send(pluginResult, callbackId: listenerCallbackId)
+        commandDelegate?.send(pluginResult, callbackId: stopCallbackId)
     }
 
     public func server(_ server: PSWebSocketServer!, didFailWithError error: Error!) {
@@ -220,15 +239,18 @@ import Foundation
         #if DEBUG
             print("WebSocketServer: Server did fail with error: \(error)")
         #endif
+        
+        // normally already stopped. just making sure!
+        wsserver?.stop()
 
         wsserver = nil
         UUIDSockets.removeAll()
         socketsUUID.removeAll()
 
-        let status: NSDictionary = NSDictionary(objects: ["onDidNotStart", "0.0.0.0", port!], forKeys: ["action" as NSCopying, "addr" as NSCopying, "port" as NSCopying])
+        let status: NSDictionary = NSDictionary(objects: ["onFailure", "0.0.0.0", port!, error.localizedDescription], forKeys: ["action" as NSCopying, "addr" as NSCopying, "port" as NSCopying, "reason" as String as NSCopying])
         let pluginResult = CDVPluginResult(status: CDVCommandStatus_OK, messageAs: status as! [AnyHashable: Any])
         pluginResult?.setKeepCallbackAs(false)
-        commandDelegate?.send(pluginResult, callbackId: listenerCallbackId)
+        commandDelegate?.send(pluginResult, callbackId: startCallbackId)
     }
 
     public func server(_ server: PSWebSocketServer!, acceptWebSocketFrom address: Data, with request: URLRequest, trust: SecTrust, response: AutoreleasingUnsafeMutablePointer<HTTPURLResponse?>) -> Bool {
@@ -296,7 +318,7 @@ import Foundation
         let status: NSDictionary = NSDictionary(objects: ["onOpen", conn], forKeys: ["action" as NSCopying, "conn" as NSCopying])
         let pluginResult = CDVPluginResult(status: CDVCommandStatus_OK, messageAs: status as! [AnyHashable: Any])
         pluginResult?.setKeepCallbackAs(true)
-        commandDelegate?.send(pluginResult, callbackId: listenerCallbackId)
+        commandDelegate?.send(pluginResult, callbackId: startCallbackId)
     }
 
     public func server(_ server: PSWebSocketServer!, webSocket: PSWebSocket!, didReceiveMessage message: Any) {
@@ -309,7 +331,7 @@ import Foundation
             let status: NSDictionary = NSDictionary(objects: ["onMessage", uuid, message], forKeys: ["action" as NSCopying, "uuid" as NSCopying, "msg" as NSCopying])
             let pluginResult = CDVPluginResult(status: CDVCommandStatus_OK, messageAs: status as! [AnyHashable: Any])
             pluginResult?.setKeepCallbackAs(true)
-            commandDelegate?.send(pluginResult, callbackId: listenerCallbackId)
+            commandDelegate?.send(pluginResult, callbackId: startCallbackId)
         } else {
             #if DEBUG
                 print("WebSocketServer: unknown socket")
@@ -327,7 +349,7 @@ import Foundation
             let status: NSDictionary = NSDictionary(objects: ["onClose", uuid, code, reason, wasClean], forKeys: ["action" as NSCopying, "uuid" as NSCopying, "code" as NSCopying, "reason" as NSCopying, "wasClean" as NSCopying])
             let pluginResult = CDVPluginResult(status: CDVCommandStatus_OK, messageAs: status as! [AnyHashable: Any])
             pluginResult?.setKeepCallbackAs(true)
-            commandDelegate?.send(pluginResult, callbackId: listenerCallbackId)
+            commandDelegate?.send(pluginResult, callbackId: startCallbackId)
 
             socketsUUID.removeValue(forKey: webSocket)
             UUIDSockets.removeValue(forKey: uuid)
