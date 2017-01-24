@@ -1,7 +1,7 @@
 /*
  * Cordova WebSocket Server Plugin
  *
- * WebSocket Server plugin for Cordova/Phonegap 
+ * WebSocket Server plugin for Cordova/Phonegap
  * by Sylvain Brejeon
  */
 
@@ -61,7 +61,9 @@ var WebSocketServer = {
                 break;
             default:
                 connections = [];
-                success(result.addr, result.port);
+                if (success) {
+                    success(result.addr, result.port);
+                }
             }
         }, failure, "WebSocketServer", "start", [ port, options.origins, options.protocols ]);
     },
@@ -69,7 +71,9 @@ var WebSocketServer = {
     stop : function(success, failure) {
         return exec(function(result) {
             connections = [];
-            success(result.addr, result.port);
+            if (success) {
+                success(result.addr, result.port);
+            }
         }, failure, "WebSocketServer", "stop", []);
     },
 
