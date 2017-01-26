@@ -10,6 +10,7 @@ This is not a background service. When the cordova view is destroyed/terminated,
 
 - onStart, onDidNotStart and onStop handlers replaced with success and failure callbacks
 - added generic onFailure handler (assume the server is unexpectedly stopped in this handler)
+- [iOS] fixed crash on stop and close (dealloc)
 
 #### 1.3.1
 
