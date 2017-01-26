@@ -15,12 +15,15 @@ import Foundation
     fileprivate var protocols: [String]?
     fileprivate var UUIDSockets: [String: PSWebSocket]!
     fileprivate var socketsUUID: [PSWebSocket: String]!
+    fileprivate var didCloseUUIDs: [String]!
     fileprivate var startCallbackId: String?
     fileprivate var stopCallbackId: String?
+    fileprivate var didStopOrDidFail: Bool = false
 
     override public func pluginInitialize() {
         UUIDSockets  = [:]
         socketsUUID = [:]
+        didCloseUUIDs = []
     }
 
     override public func onAppTerminate() {
@@ -29,6 +32,7 @@ import Foundation
             wsserver = nil
             UUIDSockets.removeAll()
             socketsUUID.removeAll()
+            didCloseUUIDs.removeAll()
         }
     }
 
@@ -88,6 +92,11 @@ import Foundation
         #if DEBUG
             print("WebSocketServer: start")
         #endif
+        
+        if didStopOrDidFail {
+            wsserver = nil
+            didStopOrDidFail = false
+        }
 
         if wsserver != nil {
             let pluginResult = CDVPluginResult(status: CDVCommandStatus_ERROR, messageAs: "Server already running")
@@ -126,6 +135,11 @@ import Foundation
         #if DEBUG
             print("WebSocketServer: stop")
         #endif
+        
+        if didStopOrDidFail {
+            wsserver = nil
+            didStopOrDidFail = false
+        }
         
         if wsserver == nil {
             let pluginResult = CDVPluginResult(status: CDVCommandStatus_ERROR, messageAs: "Server is not running")
@@ -224,9 +238,10 @@ import Foundation
             print("WebSocketServer: Server did stop…")
         #endif
 
-        wsserver = nil
+        didStopOrDidFail = true
         UUIDSockets.removeAll()
         socketsUUID.removeAll()
+        didCloseUUIDs.removeAll()
 
         let status: NSDictionary = NSDictionary(objects: ["0.0.0.0", Int(server.realPort)], forKeys: ["addr" as NSCopying, "port" as NSCopying])
         let pluginResult = CDVPluginResult(status: CDVCommandStatus_OK, messageAs: status as! [AnyHashable: Any])
@@ -243,9 +258,10 @@ import Foundation
         // normally already stopped. just making sure!
         wsserver?.stop()
 
-        wsserver = nil
+        didStopOrDidFail = true
         UUIDSockets.removeAll()
         socketsUUID.removeAll()
+        didCloseUUIDs.removeAll()
 
         let status: NSDictionary = NSDictionary(objects: ["onFailure", "0.0.0.0", port!, error.localizedDescription], forKeys: ["action" as NSCopying, "addr" as NSCopying, "port" as NSCopying, "reason" as String as NSCopying])
         let pluginResult = CDVPluginResult(status: CDVCommandStatus_OK, messageAs: status as! [AnyHashable: Any])
@@ -291,6 +307,15 @@ import Foundation
         #if DEBUG
             print("WebSocketServer: WebSocket did open")
         #endif
+        
+        // clean previously closed sockets
+        for closedUUID in didCloseUUIDs {
+            if let webSocket = UUIDSockets[closedUUID] {
+                socketsUUID.removeValue(forKey: webSocket)
+            }
+            UUIDSockets.removeValue(forKey: closedUUID)
+        }
+        didCloseUUIDs.removeAll()
 
         var uuid: String!
         while uuid == nil || UUIDSockets[uuid] != nil {
@@ -346,13 +371,13 @@ import Foundation
         #endif
 
         if let uuid = socketsUUID[webSocket] {
+            
+            didCloseUUIDs.append(uuid)
+            
             let status: NSDictionary = NSDictionary(objects: ["onClose", uuid, code, reason, wasClean], forKeys: ["action" as NSCopying, "uuid" as NSCopying, "code" as NSCopying, "reason" as NSCopying, "wasClean" as NSCopying])
             let pluginResult = CDVPluginResult(status: CDVCommandStatus_OK, messageAs: status as! [AnyHashable: Any])
             pluginResult?.setKeepCallbackAs(true)
             commandDelegate?.send(pluginResult, callbackId: startCallbackId)
-
-            socketsUUID.removeValue(forKey: webSocket)
-            UUIDSockets.removeValue(forKey: uuid)
         } else {
             #if DEBUG
                 print("WebSocketServer: unknown socket")
