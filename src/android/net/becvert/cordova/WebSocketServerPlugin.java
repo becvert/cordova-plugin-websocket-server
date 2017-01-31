@@ -55,9 +55,9 @@ public class WebSocketServerPlugin extends CordovaPlugin {
             try {
                 wsserver.stop();
             } catch (IOException e) {
-                e.printStackTrace();
+                Log.e(TAG, e.getMessage(), e);
             } catch (InterruptedException e) {
-                e.printStackTrace();
+                Log.e(TAG, e.getMessage(), e);
             } finally {
                 wsserver = null;
             }
@@ -67,7 +67,7 @@ public class WebSocketServerPlugin extends CordovaPlugin {
     @Override
     public boolean execute(String action, JSONArray args, final CallbackContext callbackContext) {
 
-        if (wsserver != null && !wsserver.active) {
+        if (wsserver != null && wsserver.failed) {
             wsserver = null;
         }
 
@@ -86,10 +86,10 @@ public class WebSocketServerPlugin extends CordovaPlugin {
                         callbackContext.sendPluginResult(result);
 
                     } catch (JSONException e) {
-                        e.printStackTrace();
+                        Log.e(TAG, e.getMessage(), e);
                         callbackContext.error("Error: " + e.getMessage());
                     } catch (SocketException e) {
-                        e.printStackTrace();
+                        Log.e(TAG, e.getMessage(), e);
                         callbackContext.error("Error: " + e.getMessage());
                     }
                 }
@@ -104,34 +104,48 @@ public class WebSocketServerPlugin extends CordovaPlugin {
                 cordova.getThreadPool().execute(new Runnable() {
                     @Override
                     public void run() {
-                        wsserver = new WebSocketServerImpl(port);
-                        wsserver.setCallbackContext(callbackContext);
+                        WebSocketServerImpl newServer = null;
                         try {
-                            wsserver.setOrigins(jsonArrayToArrayList(origins));
+                            newServer = new WebSocketServerImpl(port);
+                            newServer.setCallbackContext(callbackContext);
+                        } catch (IllegalArgumentException e) {
+                            Log.e(TAG, e.getMessage(), e);
+                            callbackContext.error("Port number error");
+                            return;
+                        }
+                        try {
+                            newServer.setOrigins(jsonArrayToArrayList(origins));
                         } catch (JSONException e) {
-                            wsserver = null;
+                            Log.e(TAG, e.getMessage(), e);
                             callbackContext.error("Origins option error");
                             return;
                         }
                         try {
-                            wsserver.setProtocols(jsonArrayToArrayList(protocols));
+                            newServer.setProtocols(jsonArrayToArrayList(protocols));
                         } catch (JSONException e) {
-                            wsserver = null;
+                            Log.e(TAG, e.getMessage(), e);
                             callbackContext.error("Protocols option error");
                             return;
                         }
-                        wsserver.start();
+                        try {
+                            newServer.start();
+                        } catch (IllegalStateException e) {
+                            Log.e(TAG, e.getMessage(), e);
+                            callbackContext.error("Can only be started once.");
+                            return;
+                        }
 
                         try {
                             // wait for port binding!
                             Thread.sleep(2000);
                         } catch (InterruptedException e) {
-                            e.printStackTrace();
+                            Log.e(TAG, e.getMessage(), e);
                         }
+
+                        wsserver = newServer;
 
                         try {
                             JSONObject status = new JSONObject();
-                            status.put("action", "onStart");
                             status.put("addr", wsserver.getAddress().getAddress().getHostAddress());
                             status.put("port", wsserver.getPort());
 
@@ -141,8 +155,7 @@ public class WebSocketServerPlugin extends CordovaPlugin {
                             callbackContext.sendPluginResult(result);
 
                         } catch (JSONException e) {
-                            e.printStackTrace();
-                            callbackContext.error("Error: " + e.getMessage());
+                            Log.e(TAG, e.getMessage(), e);
                         }
                     }
                 });
@@ -161,30 +174,37 @@ public class WebSocketServerPlugin extends CordovaPlugin {
                         try {
                             wsserver.stop(2000);
                         } catch (InterruptedException e) {
-                            e.printStackTrace();
+                            Log.e(TAG, e.getMessage(), e);
                             callbackContext.error("Error: " + e.getMessage());
                             return;
                         }
 
                         try {
+                            // wait for stop!
+                            Thread.sleep(2000);
+                        } catch (InterruptedException e) {
+                            Log.e(TAG, e.getMessage(), e);
+                        }
+
+                        try {
                             JSONObject status = new JSONObject();
-                            status.put("action", "onStop");
                             status.put("addr", wsserver.getAddress().getAddress().getHostAddress());
                             status.put("port", wsserver.getPort());
 
                             Log.d(TAG, "stop result: " + status.toString());
-                            PluginResult result = new PluginResult(PluginResult.Status.OK, status);
-                            result.setKeepCallback(false);
-                            wsserver.getCallbackContext().sendPluginResult(result);
+                            callbackContext.success(status);
 
                         } catch (JSONException e) {
-                            e.printStackTrace();
-                            callbackContext.error("Error: " + e.getMessage());
+                            Log.e(TAG, e.getMessage(), e);
                         }
 
                         wsserver = null;
+
                     }
                 });
+            } else {
+                callbackContext.error("Server is not running.");
+                return false;
             }
 
         } else if (ACTION_SEND.equals(action)) {
@@ -226,7 +246,7 @@ public class WebSocketServerPlugin extends CordovaPlugin {
             }
 
         } else {
-            Log.e(TAG, "Invalid action: " + action);
+            Log.w(TAG, "Invalid action: " + action);
             callbackContext.error("Invalid action: " + action);
             return false;
         }

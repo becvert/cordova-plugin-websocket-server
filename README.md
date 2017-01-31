@@ -6,9 +6,15 @@ This is not a background service. When the cordova view is destroyed/terminated,
 
 ## Changelog ##
 
+#### 1.4.0
+
+- onStart, onDidNotStart and onStop handlers replaced with success and failure callbacks
+- added generic onFailure handler (assume the server is unexpectedly stopped in this handler)
+- [iOS] fixed crash on stop and close (dealloc)
+
 #### 1.3.1
 
-- adding state 'open' or 'close' to the `conn` object
+- adding state 'open' or 'closed' to the `conn` object
 
 #### 1.3.0
 
@@ -41,21 +47,15 @@ cordova plugin add cordova-plugin-websocket-server
 var wsserver = cordova.plugins.wsserver;
 ```
 
-#### `start(port, options)`
+#### `start(port, options, success, failure)`
 Starts the server on the given port (0 means any free port).
 Binds to all available network interfaces ('0.0.0.0').
 
 ```javascript
  wsserver.start(port, {
     // WebSocket Server
-    'onStart' : function(addr, port) {
-        console.log('Listening on %s:%d', addr, port);
-    },
-    'onDidNotStart' :  function(addr, port) {
-        console.log('Failed to listen on %s:%d', addr, port);
-    },
-    'onStop' : function(addr, port) {
-        console.log('Stopped listening on %s:%d', addr, port);
+    'onFailure' :  function(addr, port, reason) {
+        console.log('Stopped listening on %s:%d. Reason: %s', addr, port, reason);
     },
     // WebSocket Connection
     'onOpen' : function(conn) {
@@ -76,14 +76,20 @@ Binds to all available network interfaces ('0.0.0.0').
     },
     'origins' : [ 'file://' ], // optional. validates the 'Origin' HTTP Header.
     'protocols' : [ 'my-protocol-v1', 'my-protocol-v2' ] // optional. validates the 'Sec-WebSocket-Protocol' HTTP Header.
+}, function onStart(addr, port) {
+    console.log('Listening on %s:%d', addr, port);
+}, function onDidNotStart(reason) {
+    console.log('Did not start. Reason: %s', reason);
 });
 ```
 
-#### `stop()`
+#### `stop(success,failure)`
 Stops the server.
 
 ```javascript
-wsserver.stop();
+wsserver.stop(function onStop(addr, port) {
+    console.log('Stopped listening on %s:%d', addr, port);
+});
 ```
 
 #### `send(conn, msg)`

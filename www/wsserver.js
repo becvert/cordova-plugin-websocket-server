@@ -1,7 +1,7 @@
 /*
  * Cordova WebSocket Server Plugin
  *
- * WebSocket Server plugin for Cordova/Phonegap 
+ * WebSocket Server plugin for Cordova/Phonegap
  * by Sylvain Brejeon
  */
 
@@ -20,17 +20,15 @@ var WebSocketServer = {
         return exec(success, failure, "WebSocketServer", "getInterfaces", []);
     },
 
-    start : function(port, options) {
+    start : function(port, options, success, failure) {
         return exec(function(result) {
             switch (result.action) {
-            case 'onStart':
-            case 'onDidNotStart':
-            case 'onStop':
+            case 'onFailure':
+                connections = [];
                 var callback = options[result.action];
                 if (callback) {
-                    callback(result.addr, result.port);
+                    callback(result.addr, result.port, result.reason);
                 }
-                connections = [];
                 break;
             case 'onOpen':
                 var conn = result.conn;
@@ -52,8 +50,8 @@ var WebSocketServer = {
                 break;
             case 'onClose':
                 var conn = connections[result.uuid];
-                conn.state = 'closed';
                 if (conn) {
+                    conn.state = 'closed';
                     delete connections[conn.uuid];
                     var callback = options[result.action];
                     if (callback) {
@@ -62,13 +60,21 @@ var WebSocketServer = {
                 }
                 break;
             default:
-                console.log('unknown action: ' + result.action);
+                connections = [];
+                if (success) {
+                    success(result.addr, result.port);
+                }
             }
-        }, fail, "WebSocketServer", "start", [ port, options.origins, options.protocols ]);
+        }, failure, "WebSocketServer", "start", [ port, options.origins, options.protocols ]);
     },
 
-    stop : function() {
-        return exec(null, fail, "WebSocketServer", "stop", []);
+    stop : function(success, failure) {
+        return exec(function(result) {
+            connections = [];
+            if (success) {
+                success(result.addr, result.port);
+            }
+        }, failure, "WebSocketServer", "stop", []);
     },
 
     send : function(conn, msg) {
