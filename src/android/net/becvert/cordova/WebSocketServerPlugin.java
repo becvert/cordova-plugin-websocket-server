@@ -98,8 +98,33 @@ public class WebSocketServerPlugin extends CordovaPlugin {
         } else if (ACTION_START.equals(action)) {
 
             final int port = args.optInt(0);
-            final JSONArray origins = args.optJSONArray(1);
-            final JSONArray protocols = args.optJSONArray(2);
+
+            List<String> _origins = null;
+            List<String> _protocols = null;
+            Boolean _tcpNoDelay = null;
+
+            try {
+                _origins = jsonArrayToArrayList(args.optJSONArray(1));
+            } catch (JSONException e) {
+                Log.e(TAG, e.getMessage(), e);
+                callbackContext.error("Origins option error");
+                return false;
+            }
+            try {
+                _protocols = jsonArrayToArrayList(args.optJSONArray(2));
+            } catch (JSONException e) {
+                Log.e(TAG, e.getMessage(), e);
+                callbackContext.error("Protocols option error");
+                return false;
+            }
+            if (!args.isNull(3)) {
+                _tcpNoDelay = Boolean.valueOf(args.optBoolean(3));
+            }
+
+            final List<String> origins = _origins;
+            final List<String> protocols = _protocols;
+            final Boolean tcpNoDelay = _tcpNoDelay;
+
             if (wsserver == null) {
                 cordova.getThreadPool().execute(new Runnable() {
                     @Override
@@ -113,20 +138,17 @@ public class WebSocketServerPlugin extends CordovaPlugin {
                             callbackContext.error("Port number error");
                             return;
                         }
-                        try {
-                            newServer.setOrigins(jsonArrayToArrayList(origins));
-                        } catch (JSONException e) {
-                            Log.e(TAG, e.getMessage(), e);
-                            callbackContext.error("Origins option error");
-                            return;
+
+                        if (origins != null) {
+                            newServer.setOrigins(origins);
                         }
-                        try {
-                            newServer.setProtocols(jsonArrayToArrayList(protocols));
-                        } catch (JSONException e) {
-                            Log.e(TAG, e.getMessage(), e);
-                            callbackContext.error("Protocols option error");
-                            return;
+                        if (protocols != null) {
+                            newServer.setProtocols(protocols);
                         }
+                        if (tcpNoDelay != null) {
+                            newServer.setTcpNoDelay(tcpNoDelay);
+                        }
+
                         try {
                             newServer.start();
                         } catch (IllegalStateException e) {
@@ -254,7 +276,7 @@ public class WebSocketServerPlugin extends CordovaPlugin {
         return true;
     }
 
-    public static List<String> jsonArrayToArrayList(JSONArray jsonArray) throws JSONException {
+    public static ArrayList<String> jsonArrayToArrayList(JSONArray jsonArray) throws JSONException {
         ArrayList<String> list = null;
         if (jsonArray != null && jsonArray.length() > 0) {
             list = new ArrayList<String>();

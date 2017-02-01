@@ -65,7 +65,7 @@ var WebSocketServer = {
                     success(result.addr, result.port);
                 }
             }
-        }, failure, "WebSocketServer", "start", [ port, options.origins, options.protocols ]);
+        }, failure, "WebSocketServer", "start", [ port, options.origins, options.protocols, options.tcpNoDelay ]);
     },
 
     stop : function(success, failure) {
