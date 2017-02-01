@@ -6,6 +6,10 @@ This is not a background service. When the cordova view is destroyed/terminated,
 
 ## Changelog ##
 
+#### 1.4.1
+
+- new tcpNoDelay option
+
 #### 1.4.0
 
 - onStart, onDidNotStart and onStop handlers replaced with success and failure callbacks
@@ -53,11 +57,11 @@ Binds to all available network interfaces ('0.0.0.0').
 
 ```javascript
  wsserver.start(port, {
-    // WebSocket Server
+    // WebSocket Server handlers
     'onFailure' :  function(addr, port, reason) {
         console.log('Stopped listening on %s:%d. Reason: %s', addr, port, reason);
     },
-    // WebSocket Connection
+    // WebSocket Connection handlers
     'onOpen' : function(conn) {
         /* conn: {
          'uuid' : '8e176b14-a1af-70a7-3e3d-8b341977a16e',
@@ -74,8 +78,10 @@ Binds to all available network interfaces ('0.0.0.0').
     'onClose' : function(conn, code, reason) {
         console.log('A user disconnected from %s', conn.remoteAddr);
     },
-    'origins' : [ 'file://' ], // optional. validates the 'Origin' HTTP Header.
-    'protocols' : [ 'my-protocol-v1', 'my-protocol-v2' ] // optional. validates the 'Sec-WebSocket-Protocol' HTTP Header.
+    // Other options
+    'origins' : [ 'file://' ], // validates the 'Origin' HTTP Header.
+    'protocols' : [ 'my-protocol-v1', 'my-protocol-v2' ], // validates the 'Sec-WebSocket-Protocol' HTTP Header.
+    'tcpNoDelay' : true // enable/disable Nagle's algorithm. false by default.
 }, function onStart(addr, port) {
     console.log('Listening on %s:%d', addr, port);
 }, function onDidNotStart(reason) {
