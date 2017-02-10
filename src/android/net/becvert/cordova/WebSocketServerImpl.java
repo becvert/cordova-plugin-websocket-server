@@ -9,6 +9,11 @@ package net.becvert.cordova;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
+import java.net.Socket;
+import java.net.SocketException;
+import java.nio.channels.ByteChannel;
+import java.nio.channels.SelectionKey;
+import java.nio.channels.SocketChannel;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -21,6 +26,8 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import com.pusher.java_websocket.WebSocket;
+import com.pusher.java_websocket.WebSocketAdapter;
+import com.pusher.java_websocket.WebSocketImpl;
 import com.pusher.java_websocket.drafts.Draft;
 import com.pusher.java_websocket.exceptions.InvalidDataException;
 import com.pusher.java_websocket.framing.CloseFrame;
@@ -62,6 +69,39 @@ public class WebSocketServerImpl extends WebSocketServer {
 
     public void setProtocols(List<String> protocols) {
         this.protocols = protocols;
+    }
+
+    public void setTcpNoDelay(Boolean on) {
+        if (on) {
+            this.setWebSocketFactory(new WebSocketServerFactory() {
+                @Override
+                public ByteChannel wrapChannel(SocketChannel channel, SelectionKey key) throws IOException {
+                    return (SocketChannel) channel;
+                }
+
+                @Override
+                public WebSocketImpl createWebSocket(WebSocketAdapter a, List<Draft> d, Socket s) {
+                    try {
+                        Log.d(WebSocketServerPlugin.TAG, "setting TCP_NODELAY");
+                        s.setTcpNoDelay(true);
+                    } catch (SocketException e) {
+                        Log.e(WebSocketServerPlugin.TAG, "SocketException: failed to set TCP_NODELAY");
+                    }
+                    return new WebSocketImpl(a, d);
+                }
+
+                @Override
+                public WebSocketImpl createWebSocket(WebSocketAdapter a, Draft d, Socket s) {
+                    try {
+                        Log.d(WebSocketServerPlugin.TAG, "setting TCP_NODELAY");
+                        s.setTcpNoDelay(true);
+                    } catch (SocketException e) {
+                        Log.e(WebSocketServerPlugin.TAG, "SocketException: failed to set TCP_NODELAY");
+                    }
+                    return new WebSocketImpl(a, d);
+                }
+            });
+        }
     }
 
     private String getAcceptedProtocol(ClientHandshake clientHandshake) {

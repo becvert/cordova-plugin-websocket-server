@@ -60,5 +60,6 @@
 
 - (void)start;
 - (void)stop;
+- (void)setTcpNoDelay:(BOOL)on;
 
 @end

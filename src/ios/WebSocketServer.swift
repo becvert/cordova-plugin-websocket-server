@@ -114,11 +114,16 @@ import Foundation
         
         origins = command.argument(at: 1) as? [String]
         protocols = command.argument(at: 2) as? [String]
+        let tcpNoDelay = command.argument(at: 3) as? Bool
 
         if let server = PSWebSocketServer(host: nil, port: UInt(port!)) {
             startCallbackId = command.callbackId
             wsserver = server
             server.delegate = self
+            
+            if tcpNoDelay! {
+                server.setTcpNoDelay(true)
+            }
 
             commandDelegate?.run(inBackground: {
                 server.start()
