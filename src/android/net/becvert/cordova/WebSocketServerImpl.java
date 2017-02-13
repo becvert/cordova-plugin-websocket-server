@@ -1,10 +1,3 @@
-/*
- * Cordova WebSocket Server Plugin
- *
- * WebSocket Server plugin for Cordova/Phonegap 
- * by Sylvain Brejeon
- */
-
 package net.becvert.cordova;
 
 import java.io.IOException;

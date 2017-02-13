@@ -1,10 +1,3 @@
-/*
- * Cordova WebSocket Server Plugin
- *
- * WebSocket Server plugin for Cordova/Phonegap
- * by Sylvain Brejeon
- */
-
 import Foundation
 
 @objc(WebSocketServer) public class WebSocketServer : CDVPlugin, PSWebSocketServerDelegate {
