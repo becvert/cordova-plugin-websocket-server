@@ -5,7 +5,7 @@ var fail = function(o) {
     console.error("Error " + JSON.stringify(o));
 };
 
-var connections = null;
+var connections = [];
 
 var WebSocketServer = {
 
