@@ -15,18 +15,17 @@ import java.util.UUID;
 
 import org.apache.cordova.CallbackContext;
 import org.apache.cordova.PluginResult;
+import org.java_websocket.WebSocket;
+import org.java_websocket.WebSocketAdapter;
+import org.java_websocket.WebSocketImpl;
+import org.java_websocket.drafts.Draft;
+import org.java_websocket.exceptions.InvalidDataException;
+import org.java_websocket.framing.CloseFrame;
+import org.java_websocket.handshake.ClientHandshake;
+import org.java_websocket.handshake.ServerHandshakeBuilder;
+import org.java_websocket.server.WebSocketServer;
 import org.json.JSONException;
 import org.json.JSONObject;
-
-import com.pusher.java_websocket.WebSocket;
-import com.pusher.java_websocket.WebSocketAdapter;
-import com.pusher.java_websocket.WebSocketImpl;
-import com.pusher.java_websocket.drafts.Draft;
-import com.pusher.java_websocket.exceptions.InvalidDataException;
-import com.pusher.java_websocket.framing.CloseFrame;
-import com.pusher.java_websocket.handshake.ClientHandshake;
-import com.pusher.java_websocket.handshake.ServerHandshakeBuilder;
-import com.pusher.java_websocket.server.WebSocketServer;
 
 import android.util.Log;
 
@@ -92,6 +91,10 @@ public class WebSocketServerImpl extends WebSocketServer {
                         Log.e(WebSocketServerPlugin.TAG, "SocketException: failed to set TCP_NODELAY");
                     }
                     return new WebSocketImpl(a, d);
+                }
+
+                @Override
+                public void close() {
                 }
             });
         }
