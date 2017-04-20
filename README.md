@@ -6,6 +6,10 @@ This is not a background service. When the cordova view is destroyed/terminated,
 
 ## Changelog ##
 
+#### 1.4.3
+
+- [Android] switching back to [org:java-websocket:1.3.2](https://github.com/TooTallNate/Java-WebSocket)
+
 #### 1.4.2
 
 - fixed error when a connection is open before the start success callback occurs
