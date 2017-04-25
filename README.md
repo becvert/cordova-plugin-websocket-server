@@ -8,6 +8,7 @@ This is not a background service. When the cordova view is destroyed/terminated,
 
 #### 1.4.3
 
+- plugin.xml: moving js clobbers from global to only supported platforms
 - [Android] switching back to [org:java-websocket:1.3.2](https://github.com/TooTallNate/Java-WebSocket)
 
 #### 1.4.2
@@ -89,7 +90,7 @@ Binds to all available network interfaces ('0.0.0.0').
     // Other options
     'origins' : [ 'file://' ], // validates the 'Origin' HTTP Header.
     'protocols' : [ 'my-protocol-v1', 'my-protocol-v2' ], // validates the 'Sec-WebSocket-Protocol' HTTP Header.
-    'tcpNoDelay' : true // enable/disable Nagle's algorithm. false by default.
+    'tcpNoDelay' : true // disables Nagle's algorithm.
 }, function onStart(addr, port) {
     console.log('Listening on %s:%d', addr, port);
 }, function onDidNotStart(reason) {
