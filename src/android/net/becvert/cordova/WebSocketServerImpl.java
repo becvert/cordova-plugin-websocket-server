@@ -1,23 +1,10 @@
 package net.becvert.cordova;
 
-import java.io.IOException;
-import java.net.InetSocketAddress;
-import java.net.Socket;
-import java.net.SocketException;
-import java.nio.channels.ByteChannel;
-import java.nio.channels.SelectionKey;
-import java.nio.channels.SocketChannel;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
+import android.util.Log;
 
 import org.apache.cordova.CallbackContext;
 import org.apache.cordova.PluginResult;
 import org.java_websocket.WebSocket;
-import org.java_websocket.WebSocketAdapter;
-import org.java_websocket.WebSocketImpl;
 import org.java_websocket.drafts.Draft;
 import org.java_websocket.exceptions.InvalidDataException;
 import org.java_websocket.framing.CloseFrame;
@@ -27,7 +14,14 @@ import org.java_websocket.server.WebSocketServer;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import android.util.Log;
+import java.io.IOException;
+import java.net.InetAddress;
+import java.net.InetSocketAddress;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
 
 public class WebSocketServerImpl extends WebSocketServer {
 
@@ -61,43 +55,6 @@ public class WebSocketServerImpl extends WebSocketServer {
 
     public void setProtocols(List<String> protocols) {
         this.protocols = protocols;
-    }
-
-    public void setTcpNoDelay(Boolean on) {
-        if (on) {
-            this.setWebSocketFactory(new WebSocketServerFactory() {
-                @Override
-                public ByteChannel wrapChannel(SocketChannel channel, SelectionKey key) throws IOException {
-                    return (SocketChannel) channel;
-                }
-
-                @Override
-                public WebSocketImpl createWebSocket(WebSocketAdapter a, List<Draft> d, Socket s) {
-                    try {
-                        Log.d(WebSocketServerPlugin.TAG, "setting TCP_NODELAY");
-                        s.setTcpNoDelay(true);
-                    } catch (SocketException e) {
-                        Log.e(WebSocketServerPlugin.TAG, "SocketException: failed to set TCP_NODELAY");
-                    }
-                    return new WebSocketImpl(a, d);
-                }
-
-                @Override
-                public WebSocketImpl createWebSocket(WebSocketAdapter a, Draft d, Socket s) {
-                    try {
-                        Log.d(WebSocketServerPlugin.TAG, "setting TCP_NODELAY");
-                        s.setTcpNoDelay(true);
-                    } catch (SocketException e) {
-                        Log.e(WebSocketServerPlugin.TAG, "SocketException: failed to set TCP_NODELAY");
-                    }
-                    return new WebSocketImpl(a, d);
-                }
-
-                @Override
-                public void close() {
-                }
-            });
-        }
     }
 
     private String getAcceptedProtocol(ClientHandshake clientHandshake) {
@@ -168,7 +125,8 @@ public class WebSocketServerImpl extends WebSocketServer {
 
             JSONObject conn = new JSONObject();
             conn.put("uuid", uuid);
-            conn.put("remoteAddr", webSocket.getRemoteSocketAddress().getAddress().getHostAddress());
+            InetAddress addr = webSocket.getRemoteSocketAddress().getAddress();
+            conn.put("remoteAddr", addr == null ? null : addr.getHostAddress());
 
             String acceptedProtocol = "";
             if (protocols != null) {
@@ -284,7 +242,7 @@ public class WebSocketServerImpl extends WebSocketServer {
 
                 JSONObject status = new JSONObject();
                 status.put("action", "onFailure");
-                status.put("addr", this.getAddress().getAddress().getHostAddress());
+                status.put("addr", this.getHostAddress());
                 status.put("port", this.getPort());
                 if (exception != null) {
                     status.put("reason", exception.getMessage());
@@ -315,13 +273,36 @@ public class WebSocketServerImpl extends WebSocketServer {
 
     }
 
+    @Override
+    public void onStart() {
+        Log.v(WebSocketServerPlugin.TAG, "onstart");
+
+        try {
+            JSONObject status = new JSONObject();
+            status.put("addr", this.getHostAddress());
+            status.put("port", this.getPort());
+
+            Log.d(WebSocketServerPlugin.TAG, "start result: " + status.toString());
+            PluginResult result = new PluginResult(PluginResult.Status.OK, status);
+            result.setKeepCallback(true);
+            callbackContext.sendPluginResult(result);
+
+        } catch (JSONException e) {
+            Log.e(WebSocketServerPlugin.TAG, e.getMessage(), e);
+        }
+    }
+
     public void send(String uuid, String msg) {
         Log.v(WebSocketServerPlugin.TAG, "send");
 
         WebSocket webSocket = UUIDSockets.get(uuid);
 
         if (webSocket != null && !this.failed) {
-            webSocket.send(msg);
+            if (webSocket.isOpen()) {
+                webSocket.send(msg);
+            } else {
+                Log.d(WebSocketServerPlugin.TAG, "send: websocket not open");
+            }
         } else {
             Log.d(WebSocketServerPlugin.TAG, "send: unknown websocket");
         }
@@ -345,6 +326,14 @@ public class WebSocketServerImpl extends WebSocketServer {
             Log.d(WebSocketServerPlugin.TAG, "close: unknown websocket");
         }
 
+    }
+
+    public String getHostAddress() {
+        InetAddress addr = this.getAddress().getAddress();
+        if (addr == null) {
+            return null;
+        }
+        return addr.getHostAddress();
     }
 
 }

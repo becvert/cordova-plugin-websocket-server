@@ -1,14 +1,6 @@
 package net.becvert.cordova;
 
-import java.io.IOException;
-import java.net.Inet4Address;
-import java.net.Inet6Address;
-import java.net.InetAddress;
-import java.net.NetworkInterface;
-import java.net.SocketException;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
+import android.util.Log;
 
 import org.apache.cordova.CallbackContext;
 import org.apache.cordova.CordovaInterface;
@@ -20,7 +12,15 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import android.util.Log;
+import java.io.IOException;
+import java.net.Inet4Address;
+import java.net.Inet6Address;
+import java.net.InetAddress;
+import java.net.NetworkInterface;
+import java.net.SocketException;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 
 public class WebSocketServerPlugin extends CordovaPlugin {
 
@@ -150,28 +150,7 @@ public class WebSocketServerPlugin extends CordovaPlugin {
                             return;
                         }
 
-                        try {
-                            // wait for port binding!
-                            Thread.sleep(2000);
-                        } catch (InterruptedException e) {
-                            Log.e(TAG, e.getMessage(), e);
-                        }
-
                         wsserver = newServer;
-
-                        try {
-                            JSONObject status = new JSONObject();
-                            status.put("addr", wsserver.getAddress().getAddress().getHostAddress());
-                            status.put("port", wsserver.getPort());
-
-                            Log.d(TAG, "start result: " + status.toString());
-                            PluginResult result = new PluginResult(PluginResult.Status.OK, status);
-                            result.setKeepCallback(true);
-                            callbackContext.sendPluginResult(result);
-
-                        } catch (JSONException e) {
-                            Log.e(TAG, e.getMessage(), e);
-                        }
                     }
                 });
             } else {
@@ -203,7 +182,7 @@ public class WebSocketServerPlugin extends CordovaPlugin {
 
                         try {
                             JSONObject status = new JSONObject();
-                            status.put("addr", wsserver.getAddress().getAddress().getHostAddress());
+                            status.put("addr", wsserver.getHostAddress());
                             status.put("port", wsserver.getPort());
 
                             Log.d(TAG, "stop result: " + status.toString());
