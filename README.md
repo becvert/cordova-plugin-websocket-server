@@ -6,6 +6,12 @@ This is not a background service. When the cordova view is destroyed/terminated,
 
 ## Changelog ##
 
+#### 1.4.4
+
+- [Android] fixed NPE when getting HostAddress. 'addr' or 'remoteAddr' fields may be null.
+- [Android] fixed WebsocketNotConnectedException when calling send
+- [Android] upgrading to [org:java-websocket:1.3.3](https://github.com/TooTallNate/Java-WebSocket)
+
 #### 1.4.3
 
 - plugin.xml: moving js clobbers from global to only supported platforms
