@@ -6,6 +6,11 @@ This is not a background service. When the cordova view is destroyed/terminated,
 
 ## Changelog ##
 
+#### 1.4.5
+
+- [Android] upgrading to [org:java-websocket:1.3.4](https://github.com/TooTallNate/Java-WebSocket)
+- [iOS] fixing crash when tcpNoDelay not defined
+
 #### 1.4.4
 
 - [Android] fixed NPE when getting HostAddress. 'addr' or 'remoteAddr' fields may be null.
