@@ -114,8 +114,8 @@ import Foundation
             wsserver = server
             server.delegate = self
             
-            if tcpNoDelay! {
-                server.setTcpNoDelay(true)
+            if tcpNoDelay != nil {
+                server.setTcpNoDelay(tcpNoDelay!)
             }
 
             commandDelegate?.run(inBackground: {
