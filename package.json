@@ -1,6 +1,6 @@
 {
     "name": "cordova-plugin-websocket-server",
-    "version": "1.4.4",
+    "version": "1.4.5",
     "description": "Cordova WebSocket Server Plugin",
     "cordova": {
         "id": "cordova-plugin-websocket-server",
