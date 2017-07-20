@@ -1,6 +1,13 @@
 package net.becvert.cordova;
 
-import android.util.Log;
+import java.io.IOException;
+import java.net.InetAddress;
+import java.net.InetSocketAddress;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
 
 import org.apache.cordova.CallbackContext;
 import org.apache.cordova.PluginResult;
@@ -14,16 +21,14 @@ import org.java_websocket.server.WebSocketServer;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import java.io.IOException;
-import java.net.InetAddress;
-import java.net.InetSocketAddress;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
+import android.util.Log;
 
 public class WebSocketServerImpl extends WebSocketServer {
+
+    private final int[] notCleanCodes = new int[] { CloseFrame.ABNORMAL_CLOSE, CloseFrame.BUGGYCLOSE,
+            CloseFrame.EXTENSION, CloseFrame.FLASHPOLICY, CloseFrame.GOING_AWAY, CloseFrame.NEVER_CONNECTED,
+            CloseFrame.NO_UTF8, CloseFrame.NOCODE, CloseFrame.POLICY_VALIDATION, CloseFrame.PROTOCOL_ERROR,
+            CloseFrame.REFUSE, CloseFrame.TLS_ERROR, CloseFrame.TOOBIG, CloseFrame.UNEXPECTED_CONDITION };
 
     public boolean failed = false;
 
@@ -195,7 +200,15 @@ public class WebSocketServerImpl extends WebSocketServer {
                     status.put("uuid", uuid);
                     status.put("code", code);
                     status.put("reason", reason);
-                    status.put("wasClean", remote);
+
+                    boolean wasClean = true;
+                    for (int notCleanCode : notCleanCodes) {
+                        if (code == notCleanCode) {
+                            wasClean = false;
+                            break;
+                        }
+                    }
+                    status.put("wasClean", wasClean);
 
                     Log.d(WebSocketServerPlugin.TAG, "onclose result: " + status.toString());
                     PluginResult result = new PluginResult(PluginResult.Status.OK, status);
@@ -320,8 +333,6 @@ public class WebSocketServerImpl extends WebSocketServer {
             } else {
                 webSocket.close(code, reason);
             }
-            UUIDSockets.remove(uuid);
-            socketsUUID.remove(webSocket);
         } else {
             Log.d(WebSocketServerPlugin.TAG, "close: unknown websocket");
         }
@@ -329,7 +340,11 @@ public class WebSocketServerImpl extends WebSocketServer {
     }
 
     public String getHostAddress() {
-        InetAddress addr = this.getAddress().getAddress();
+        InetSocketAddress socketAddr = this.getAddress();
+        if (socketAddr == null) {
+            return null;
+        }
+        InetAddress addr = socketAddr.getAddress();
         if (addr == null) {
             return null;
         }
