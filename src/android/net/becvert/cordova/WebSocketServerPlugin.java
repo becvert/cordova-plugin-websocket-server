@@ -1,6 +1,14 @@
 package net.becvert.cordova;
 
-import android.util.Log;
+import java.io.IOException;
+import java.net.Inet4Address;
+import java.net.Inet6Address;
+import java.net.InetAddress;
+import java.net.NetworkInterface;
+import java.net.SocketException;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 
 import org.apache.cordova.CallbackContext;
 import org.apache.cordova.CordovaInterface;
@@ -12,15 +20,7 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import java.io.IOException;
-import java.net.Inet4Address;
-import java.net.Inet6Address;
-import java.net.InetAddress;
-import java.net.NetworkInterface;
-import java.net.SocketException;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
+import android.util.Log;
 
 public class WebSocketServerPlugin extends CordovaPlugin {
 
@@ -69,7 +69,6 @@ public class WebSocketServerPlugin extends CordovaPlugin {
             cordova.getThreadPool().execute(new Runnable() {
                 @Override
                 public void run() {
-
                     try {
                         JSONObject addresses = getInterfaces();
 
@@ -89,6 +88,11 @@ public class WebSocketServerPlugin extends CordovaPlugin {
             });
 
         } else if (ACTION_START.equals(action)) {
+
+            if (wsserver != null) {
+                callbackContext.error("Server already running.");
+                return false;
+            }
 
             final int port = args.optInt(0);
 
@@ -118,88 +122,75 @@ public class WebSocketServerPlugin extends CordovaPlugin {
             final List<String> protocols = _protocols;
             final Boolean tcpNoDelay = _tcpNoDelay;
 
-            if (wsserver == null) {
-                cordova.getThreadPool().execute(new Runnable() {
-                    @Override
-                    public void run() {
-                        WebSocketServerImpl newServer = null;
-                        try {
-                            newServer = new WebSocketServerImpl(port);
-                            newServer.setCallbackContext(callbackContext);
-                        } catch (IllegalArgumentException e) {
-                            Log.e(TAG, e.getMessage(), e);
-                            callbackContext.error("Port number error");
-                            return;
-                        }
-
-                        if (origins != null) {
-                            newServer.setOrigins(origins);
-                        }
-                        if (protocols != null) {
-                            newServer.setProtocols(protocols);
-                        }
-                        if (tcpNoDelay != null) {
-                            newServer.setTcpNoDelay(tcpNoDelay);
-                        }
-
-                        try {
-                            newServer.start();
-                        } catch (IllegalStateException e) {
-                            Log.e(TAG, e.getMessage(), e);
-                            callbackContext.error("Can only be started once.");
-                            return;
-                        }
-
-                        wsserver = newServer;
+            cordova.getThreadPool().execute(new Runnable() {
+                @Override
+                public void run() {
+                    WebSocketServerImpl newServer = null;
+                    try {
+                        newServer = new WebSocketServerImpl(port);
+                        newServer.setCallbackContext(callbackContext);
+                    } catch (IllegalArgumentException e) {
+                        Log.e(TAG, e.getMessage(), e);
+                        callbackContext.error("Port number error");
+                        return;
                     }
-                });
-            } else {
-                callbackContext.error("Server already running.");
-                return false;
-            }
+
+                    if (origins != null) {
+                        newServer.setOrigins(origins);
+                    }
+                    if (protocols != null) {
+                        newServer.setProtocols(protocols);
+                    }
+                    if (tcpNoDelay != null) {
+                        newServer.setTcpNoDelay(tcpNoDelay);
+                    }
+
+                    try {
+                        newServer.start();
+                    } catch (IllegalStateException e) {
+                        Log.e(TAG, e.getMessage(), e);
+                        callbackContext.error("Can only be started once.");
+                        return;
+                    }
+
+                    wsserver = newServer;
+                }
+            });
 
         } else if (ACTION_STOP.equals(action)) {
 
-            if (wsserver != null) {
-                this.cordova.getThreadPool().execute(new Runnable() {
-                    @Override
-                    public void run() {
-
-                        try {
-                            wsserver.stop(2000);
-                        } catch (InterruptedException e) {
-                            Log.e(TAG, e.getMessage(), e);
-                            callbackContext.error("Error: " + e.getMessage());
-                            return;
-                        }
-
-                        try {
-                            // wait for stop!
-                            Thread.sleep(2000);
-                        } catch (InterruptedException e) {
-                            Log.e(TAG, e.getMessage(), e);
-                        }
-
-                        try {
-                            JSONObject status = new JSONObject();
-                            status.put("addr", wsserver.getHostAddress());
-                            status.put("port", wsserver.getPort());
-
-                            Log.d(TAG, "stop result: " + status.toString());
-                            callbackContext.success(status);
-
-                        } catch (JSONException e) {
-                            Log.e(TAG, e.getMessage(), e);
-                        }
-
-                        wsserver = null;
-
-                    }
-                });
-            } else {
+            if (wsserver == null) {
                 callbackContext.error("Server is not running.");
                 return false;
             }
+
+            final WebSocketServerImpl oldServer = wsserver;
+            wsserver = null;
+
+            this.cordova.getThreadPool().execute(new Runnable() {
+                @Override
+                public void run() {
+                    try {
+                        oldServer.stop(2000);
+                    } catch (InterruptedException e) {
+                        Log.e(TAG, e.getMessage(), e);
+                        callbackContext.error("Error: " + e.getMessage());
+                        return;
+                    }
+
+                    try {
+                        JSONObject status = new JSONObject();
+                        status.put("addr", oldServer.getHostAddress());
+                        status.put("port", oldServer.getPort());
+
+                        Log.d(TAG, "stop result: " + status.toString());
+                        callbackContext.success(status);
+
+                    } catch (JSONException e) {
+                        Log.e(TAG, e.getMessage(), e);
+                    }
+                }
+            });
 
         } else if (ACTION_SEND.equals(action)) {
 
