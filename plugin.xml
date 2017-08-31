@@ -2,17 +2,13 @@
 <plugin xmlns="http://apache.org/cordova/ns/plugins/1.0"
     xmlns:android="http://schemas.android.com/apk/res/android"
     id="cordova-plugin-websocket-server"
-    version="1.4.6">
+    version="1.4.7">
 
     <name>WebSocket Server</name>
     <description>WebSocket Server plugin for Cordova/Phonegap</description>
     <author>Sylvain Bréjeon</author>
     <keywords>cordova,plugin,network,websocket,server</keywords>
     <license>MIT</license>
-
-    <engines>
-        <engine name="cordova" version=">=3.0.0" />
-    </engines>
 
     <platform name="android">
         <js-module src="www/wsserver.js" name="WebSocketServer">
@@ -55,6 +51,6 @@
         <source-file src="src/ios/Interface.swift" />
     </platform>
 
-    <dependency id="cordova-plugin-add-swift-support"/>
+    <dependency id="cordova-plugin-add-swift-support" version="1.7.0"/>
 
 </plugin>
