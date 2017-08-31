@@ -1,3 +1,8 @@
+## [1.4.7] - 2017-08-31
+
+- setting version of cordova-plugin-add-swift-support dependency.
+- [iOS] fixed not working with firefox client
+
 ## [1.4.6] - 2017-07-20
 
 - Changelog moved to CHANGELOG.md
