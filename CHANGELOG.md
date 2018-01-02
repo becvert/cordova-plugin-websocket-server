@@ -1,3 +1,8 @@
+## [1.4.8] - 2018-01-02
+
+- [Android] upgrading to [org:java-websocket:1.3.7](https://github.com/TooTallNate/Java-WebSocket)
+- [iOS] updating cordova-plugin-add-swift-support dependency to version 1.7.1
+
 ## [1.4.7] - 2017-08-31
 
 - setting version of cordova-plugin-add-swift-support dependency.
