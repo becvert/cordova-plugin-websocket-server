@@ -1,13 +1,6 @@
 package net.becvert.cordova;
 
-import java.io.IOException;
-import java.net.InetAddress;
-import java.net.InetSocketAddress;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
+import android.util.Log;
 
 import org.apache.cordova.CallbackContext;
 import org.apache.cordova.PluginResult;
@@ -21,14 +14,22 @@ import org.java_websocket.server.WebSocketServer;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import android.util.Log;
+import java.io.IOException;
+import java.net.InetAddress;
+import java.net.InetSocketAddress;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
 
 public class WebSocketServerImpl extends WebSocketServer {
 
     private final int[] notCleanCodes = new int[] { CloseFrame.ABNORMAL_CLOSE, CloseFrame.BUGGYCLOSE,
             CloseFrame.EXTENSION, CloseFrame.FLASHPOLICY, CloseFrame.GOING_AWAY, CloseFrame.NEVER_CONNECTED,
             CloseFrame.NO_UTF8, CloseFrame.NOCODE, CloseFrame.POLICY_VALIDATION, CloseFrame.PROTOCOL_ERROR,
-            CloseFrame.REFUSE, CloseFrame.TLS_ERROR, CloseFrame.TOOBIG, CloseFrame.UNEXPECTED_CONDITION };
+            CloseFrame.REFUSE, CloseFrame.TLS_ERROR, CloseFrame.TOOBIG, CloseFrame.UNEXPECTED_CONDITION,
+            CloseFrame.SERVICE_RESTART, CloseFrame.TRY_AGAIN_LATER, CloseFrame.BAD_GATEWAY };
 
     public boolean failed = false;
 
@@ -249,6 +250,9 @@ public class WebSocketServerImpl extends WebSocketServer {
                     // fail silently
                     Log.e(WebSocketServerPlugin.TAG, e.getMessage(), e);
                 } catch (InterruptedException e) {
+                    // fail silently
+                    Log.e(WebSocketServerPlugin.TAG, e.getMessage(), e);
+                } catch (RuntimeException e) {
                     // fail silently
                     Log.e(WebSocketServerPlugin.TAG, e.getMessage(), e);
                 }
