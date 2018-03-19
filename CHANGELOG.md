@@ -1,3 +1,8 @@
+## [1.4.9] - 2018-03-19
+
+- [Android] preventing crash in the onError handler
+- [Android] upgrading to [org:java-websocket:1.3.8](https://github.com/TooTallNate/Java-WebSocket)
+
 ## [1.4.8] - 2018-01-02
 
 - [Android] upgrading to [org:java-websocket:1.3.7](https://github.com/TooTallNate/Java-WebSocket)
