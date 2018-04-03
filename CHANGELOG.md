@@ -1,7 +1,8 @@
-## [1.4.9] - 2018-03-19
+## [1.4.9] - 2018-04-03
 
 - [Android] preventing crash in the onError handler
 - [Android] upgrading to [org:java-websocket:1.3.8](https://github.com/TooTallNate/Java-WebSocket)
+- [iOS] updating cordova-plugin-add-swift-support dependency to 1.7.2
 
 ## [1.4.8] - 2018-01-02
 
