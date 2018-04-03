@@ -51,6 +51,6 @@
         <source-file src="src/ios/Interface.swift" />
     </platform>
 
-    <dependency id="cordova-plugin-add-swift-support" version="1.7.1"/>
+    <dependency id="cordova-plugin-add-swift-support" version="1.7.2"/>
 
 </plugin>
