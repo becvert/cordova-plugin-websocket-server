@@ -1,3 +1,7 @@
+## [1.4.10] - 2018-04-04
+
+- [Android] fixed "Error during WebSocket handshake: code: 404" when using the protocols option
+
 ## [1.4.9] - 2018-04-03
 
 - [Android] preventing crash in the onError handler
