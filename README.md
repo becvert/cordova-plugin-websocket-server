@@ -35,7 +35,6 @@ Binds to all available network interfaces ('0.0.0.0').
         /* conn: {
          'uuid' : '8e176b14-a1af-70a7-3e3d-8b341977a16e',
          'remoteAddr' : '192.168.1.10',
-         'acceptedProtocol' : 'my-protocol-v1',
          'httpFields' : {...},
          'resource' : '/?param1=value1&param2=value2'
          } */
