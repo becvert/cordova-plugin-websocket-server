@@ -37,14 +37,16 @@ public class WebSocketServerImpl extends WebSocketServer {
 
     private List<String> origins;
 
-    private List<String> protocols;
-
     private Map<String, WebSocket> UUIDSockets = new HashMap<String, WebSocket>();
 
     private Map<WebSocket, String> socketsUUID = new HashMap<WebSocket, String>();
 
     public WebSocketServerImpl(int port) {
         super(new InetSocketAddress(port));
+    }
+
+    public WebSocketServerImpl(int port, List<Draft> drafts) {
+        super(new InetSocketAddress(port), drafts);
     }
 
     public CallbackContext getCallbackContext() {
@@ -59,27 +61,6 @@ public class WebSocketServerImpl extends WebSocketServer {
         this.origins = origins;
     }
 
-    public void setProtocols(List<String> protocols) {
-        this.protocols = protocols;
-    }
-
-    private String getAcceptedProtocol(ClientHandshake clientHandshake) {
-        String acceptedProtocol = null;
-        String secWebSocketProtocol = clientHandshake.getFieldValue("Sec-WebSocket-Protocol");
-        if (secWebSocketProtocol != null && !secWebSocketProtocol.equals("")) {
-            String[] requestedProtocols = secWebSocketProtocol.split(", ");
-            for (int i = 0, l = requestedProtocols.length; i < l; i++) {
-                if (protocols.indexOf(requestedProtocols[i]) > -1) {
-                    // returns first matching protocol.
-                    // assumes in order of preference.
-                    acceptedProtocol = requestedProtocols[i];
-                    break;
-                }
-            }
-        }
-        return acceptedProtocol;
-    }
-
     @Override
     public ServerHandshakeBuilder onWebsocketHandshakeReceivedAsServer(WebSocket conn, Draft draft,
             ClientHandshake request) throws InvalidDataException {
@@ -92,17 +73,6 @@ public class WebSocketServerImpl extends WebSocketServer {
             if (origins.indexOf(origin) == -1) {
                 Log.w(WebSocketServerPlugin.TAG, "handshake: origin denied: " + origin);
                 throw new InvalidDataException(CloseFrame.REFUSE);
-            }
-        }
-
-        if (protocols != null) {
-            String acceptedProtocol = getAcceptedProtocol(request);
-            if (acceptedProtocol == null) {
-                String secWebSocketProtocol = request.getFieldValue("Sec-WebSocket-Protocol");
-                Log.w(WebSocketServerPlugin.TAG, "handshake: protocol denied: " + secWebSocketProtocol);
-                throw new InvalidDataException(CloseFrame.PROTOCOL_ERROR);
-            } else {
-                serverHandshakeBuilder.put("Sec-WebSocket-Protocol", acceptedProtocol);
             }
         }
 
@@ -133,13 +103,6 @@ public class WebSocketServerImpl extends WebSocketServer {
             conn.put("uuid", uuid);
             InetAddress addr = webSocket.getRemoteSocketAddress().getAddress();
             conn.put("remoteAddr", addr == null ? null : addr.getHostAddress());
-
-            String acceptedProtocol = "";
-            if (protocols != null) {
-                acceptedProtocol = getAcceptedProtocol(clientHandshake);
-            }
-            conn.put("acceptedProtocol", acceptedProtocol);
-
             conn.put("httpFields", httpFields);
             conn.put("resource", clientHandshake.getResourceDescriptor());
 

@@ -16,6 +16,10 @@ import org.apache.cordova.CordovaPlugin;
 import org.apache.cordova.CordovaWebView;
 import org.apache.cordova.PluginResult;
 import org.apache.cordova.PluginResult.Status;
+import org.java_websocket.drafts.Draft_6455;
+import org.java_websocket.extensions.IExtension;
+import org.java_websocket.protocols.IProtocol;
+import org.java_websocket.protocols.Protocol;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -127,7 +131,15 @@ public class WebSocketServerPlugin extends CordovaPlugin {
                 public void run() {
                     WebSocketServerImpl newServer = null;
                     try {
-                        newServer = new WebSocketServerImpl(port);
+                        if (protocols != null) {
+                            ArrayList<Draft_6455> drafts = new ArrayList<Draft_6455>();
+                            for (String protocol : protocols) {
+                                drafts.add(new Draft_6455(Collections.<IExtension> emptyList(), Collections.<IProtocol> singletonList(new Protocol(protocol))));
+                            }
+                            newServer = new WebSocketServerImpl(port, (List) drafts);
+                        } else {
+                            newServer = new WebSocketServerImpl(port);
+                        }
                         newServer.setCallbackContext(callbackContext);
                     } catch (IllegalArgumentException e) {
                         Log.e(TAG, e.getMessage(), e);
@@ -138,9 +150,7 @@ public class WebSocketServerPlugin extends CordovaPlugin {
                     if (origins != null) {
                         newServer.setOrigins(origins);
                     }
-                    if (protocols != null) {
-                        newServer.setProtocols(protocols);
-                    }
+
                     if (tcpNoDelay != null) {
                         newServer.setTcpNoDelay(tcpNoDelay);
                     }
