@@ -1,3 +1,8 @@
+## [1.4.11] - 2018-11-07
+
+- [Android] replacing compile with implementation (Android Gradle plugin 3.0)
+- [Android] upgrading to [org:java-websocket:1.3.9](https://github.com/TooTallNate/Java-WebSocket)
+
 ## [1.4.10] - 2018-04-04
 
 - [Android] fixed "Error during WebSocket handshake: code: 404" when using the protocols option
