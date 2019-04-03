@@ -1,3 +1,9 @@
+## [1.5.0] - 2019-04-02
+
+- [Android] upgrading to [org:java-websocket:1.4.0](https://github.com/TooTallNate/Java-WebSocket)
+- [iOS] updating cordova-plugin-add-swift-support dependency to 2.0.1
+- [iOS] support Swift 4
+
 ## [1.4.11] - 2018-11-07
 
 - [Android] replacing compile with implementation (Android Gradle plugin 3.0)
