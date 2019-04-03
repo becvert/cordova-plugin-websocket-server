@@ -29,7 +29,7 @@ import Foundation
         }
     }
 
-    public func getInterfaces(_ command: CDVInvokedUrlCommand) {
+    @objc public func getInterfaces(_ command: CDVInvokedUrlCommand) {
 
         commandDelegate?.run(inBackground: {
 
@@ -80,7 +80,7 @@ import Foundation
 
     }
 
-    public func start(_ command: CDVInvokedUrlCommand) {
+    @objc public func start(_ command: CDVInvokedUrlCommand) {
 
         #if DEBUG
             print("WebSocketServer: start")
@@ -128,7 +128,7 @@ import Foundation
 
     }
 
-    public func stop(_ command: CDVInvokedUrlCommand) {
+    @objc public func stop(_ command: CDVInvokedUrlCommand) {
 
         #if DEBUG
             print("WebSocketServer: stop")
@@ -157,7 +157,7 @@ import Foundation
         }
     }
 
-    public func send(_ command: CDVInvokedUrlCommand) {
+    @objc public func send(_ command: CDVInvokedUrlCommand) {
 
         #if DEBUG
             print("WebSocketServer: send")
@@ -185,7 +185,7 @@ import Foundation
         }
     }
 
-    public func close(_ command: CDVInvokedUrlCommand) {
+    @objc public func close(_ command: CDVInvokedUrlCommand) {
 
         #if DEBUG
             print("WebSocketServer: close")
@@ -225,7 +225,7 @@ import Foundation
         #endif
 
         let status: NSDictionary = NSDictionary(objects: ["0.0.0.0", Int(server.realPort)], forKeys: ["addr" as NSCopying, "port" as NSCopying])
-        let pluginResult = CDVPluginResult(status: CDVCommandStatus_OK, messageAs: status as! [AnyHashable: Any])
+        let pluginResult = CDVPluginResult(status: CDVCommandStatus_OK, messageAs: (status as! [AnyHashable: Any]))
         pluginResult?.setKeepCallbackAs(true)
         commandDelegate?.send(pluginResult, callbackId: startCallbackId)
     }
@@ -242,7 +242,7 @@ import Foundation
         didCloseUUIDs.removeAll()
 
         let status: NSDictionary = NSDictionary(objects: ["0.0.0.0", Int(server.realPort)], forKeys: ["addr" as NSCopying, "port" as NSCopying])
-        let pluginResult = CDVPluginResult(status: CDVCommandStatus_OK, messageAs: status as! [AnyHashable: Any])
+        let pluginResult = CDVPluginResult(status: CDVCommandStatus_OK, messageAs: (status as! [AnyHashable: Any]))
         pluginResult?.setKeepCallbackAs(false)
         commandDelegate?.send(pluginResult, callbackId: stopCallbackId)
     }
@@ -262,7 +262,7 @@ import Foundation
         didCloseUUIDs.removeAll()
 
         let status: NSDictionary = NSDictionary(objects: ["onFailure", "0.0.0.0", port!, error.localizedDescription], forKeys: ["action" as NSCopying, "addr" as NSCopying, "port" as NSCopying, "reason" as String as NSCopying])
-        let pluginResult = CDVPluginResult(status: CDVCommandStatus_OK, messageAs: status as! [AnyHashable: Any])
+        let pluginResult = CDVPluginResult(status: CDVCommandStatus_OK, messageAs: (status as! [AnyHashable: Any]))
         pluginResult?.setKeepCallbackAs(false)
         commandDelegate?.send(pluginResult, callbackId: startCallbackId)
     }
@@ -339,7 +339,7 @@ import Foundation
 
         let conn: NSDictionary = NSDictionary(objects: [uuid, remoteAddr, acceptedProtocol, httpFields, resource], forKeys: ["uuid" as NSCopying, "remoteAddr" as NSCopying, "acceptedProtocol" as NSCopying, "httpFields" as NSCopying, "resource" as NSCopying])
         let status: NSDictionary = NSDictionary(objects: ["onOpen", conn], forKeys: ["action" as NSCopying, "conn" as NSCopying])
-        let pluginResult = CDVPluginResult(status: CDVCommandStatus_OK, messageAs: status as! [AnyHashable: Any])
+        let pluginResult = CDVPluginResult(status: CDVCommandStatus_OK, messageAs: (status as! [AnyHashable: Any]))
         pluginResult?.setKeepCallbackAs(true)
         commandDelegate?.send(pluginResult, callbackId: startCallbackId)
     }
@@ -352,7 +352,7 @@ import Foundation
 
         if let uuid = socketsUUID[webSocket] {
             let status: NSDictionary = NSDictionary(objects: ["onMessage", uuid, message], forKeys: ["action" as NSCopying, "uuid" as NSCopying, "msg" as NSCopying])
-            let pluginResult = CDVPluginResult(status: CDVCommandStatus_OK, messageAs: status as! [AnyHashable: Any])
+            let pluginResult = CDVPluginResult(status: CDVCommandStatus_OK, messageAs: (status as! [AnyHashable: Any]))
             pluginResult?.setKeepCallbackAs(true)
             commandDelegate?.send(pluginResult, callbackId: startCallbackId)
         } else {
@@ -373,7 +373,7 @@ import Foundation
             didCloseUUIDs.append(uuid)
             
             let status: NSDictionary = NSDictionary(objects: ["onClose", uuid, code, reason, wasClean], forKeys: ["action" as NSCopying, "uuid" as NSCopying, "code" as NSCopying, "reason" as NSCopying, "wasClean" as NSCopying])
-            let pluginResult = CDVPluginResult(status: CDVCommandStatus_OK, messageAs: status as! [AnyHashable: Any])
+            let pluginResult = CDVPluginResult(status: CDVCommandStatus_OK, messageAs: (status as! [AnyHashable: Any]))
             pluginResult?.setKeepCallbackAs(true)
             commandDelegate?.send(pluginResult, callbackId: startCallbackId)
         } else {
