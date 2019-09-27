@@ -95,6 +95,45 @@ wsserver.getInterfaces(function(result) {
 });
 ```
 
+#### `onMessage(success, failure)`
+Add additional callback for receiving messages
+
+```javascript
+wsserver.onMessage(function(result) {
+    console.log('Connection', result.conn);
+    console.log('Message', result.msg);
+}, null); // Currently failure is not handled
+```
+
+#### `onOpen(success, failure)`
+Add additional callback for new connections 
+
+```javascript
+wsserver.onOpen(function(conn) {
+    console.log('Connection', conn);
+}, null); // Currently failure is not handled
+```
+
+#### `onClose(success, failure)`
+Add additional callback for closed connections
+
+```javascript
+wsserver.onClose(function(result) {
+    console.log('Connection', result.conn);
+    console.log(`Code: ${result.code}, Reason: ${result.reason}, Clean: ${result.wasClean}`);
+}, null); // Currently failure is not handled
+```
+
+#### `onFailure(success, failure)`
+Add additional callback for failures
+
+```javascript
+wsserver.onFailure(function(result) {
+    console.log(`Server at ${result.addr}:${result.port} has failed`);
+    console.log(result.reason);
+}, null); // Currently failure is not handled
+```
+
 ## Credits
 
 #### Android
