@@ -98,7 +98,10 @@ var WebSocketServer = {
             default:
                 connections = [];
                 if (success) {
-                    success(result.addr, result.port);
+                    success({
+                        addr: result.addr,
+                        port: result.port,
+                    });
                 }
             }
         }, failure, "WebSocketServer", "start", [ port, options.origins, options.protocols, options.tcpNoDelay ]);
@@ -131,7 +134,10 @@ var WebSocketServer = {
             connections = [];
             callbacks = [];
             if (success) {
-                success(result.addr, result.port);
+                success({
+                    addr: result.addr,
+                    port: result.port,
+                });
             }
         }, failure, "WebSocketServer", "stop", []);
     },
