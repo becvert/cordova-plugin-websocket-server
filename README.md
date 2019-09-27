@@ -50,8 +50,8 @@ Binds to all available network interfaces ('0.0.0.0').
     'origins' : [ 'file://' ], // validates the 'Origin' HTTP Header.
     'protocols' : [ 'my-protocol-v1', 'my-protocol-v2' ], // validates the 'Sec-WebSocket-Protocol' HTTP Header.
     'tcpNoDelay' : true // disables Nagle's algorithm.
-}, function onStart(addr, port) {
-    console.log('Listening on %s:%d', addr, port);
+}, function onStart(server) {
+    console.log('Listening on %s:%d', server.addr, server.port);
 }, function onDidNotStart(reason) {
     console.log('Did not start. Reason: %s', reason);
 });
@@ -61,8 +61,8 @@ Binds to all available network interfaces ('0.0.0.0').
 Stops the server.
 
 ```javascript
-wsserver.stop(function onStop(addr, port) {
-    console.log('Stopped listening on %s:%d', addr, port);
+wsserver.stop(function onStop(server) {
+    console.log('Stopped listening on %s:%d', server.addr, server.port);
 });
 ```
 
