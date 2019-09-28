@@ -99,7 +99,7 @@ wsserver.getInterfaces(function(result) {
 Add additional callback for receiving messages
 
 ```javascript
-wsserver.onMessage(function(result) {
+const uuid = wsserver.onMessage(function(result) {
     console.log('Connection', result.conn);
     console.log('Message', result.msg);
 }, null); // Currently failure is not handled
@@ -109,7 +109,7 @@ wsserver.onMessage(function(result) {
 Add additional callback for new connections 
 
 ```javascript
-wsserver.onOpen(function(conn) {
+const uuid = wsserver.onOpen(function(conn) {
     console.log('Connection', conn);
 }, null); // Currently failure is not handled
 ```
@@ -118,7 +118,7 @@ wsserver.onOpen(function(conn) {
 Add additional callback for closed connections
 
 ```javascript
-wsserver.onClose(function(result) {
+const uuid = wsserver.onClose(function(result) {
     console.log('Connection', result.conn);
     console.log(`Code: ${result.code}, Reason: ${result.reason}, Clean: ${result.wasClean}`);
 }, null); // Currently failure is not handled
@@ -128,10 +128,17 @@ wsserver.onClose(function(result) {
 Add additional callback for failures
 
 ```javascript
-wsserver.onFailure(function(result) {
+const uuid = wsserver.onFailure(function(result) {
     console.log(`Server at ${result.addr}:${result.port} has failed`);
     console.log(result.reason);
 }, null); // Currently failure is not handled
+```
+
+#### `removeCallback(uuid)`
+Remove any callback added by using uuid
+
+```javascript
+wsserver.removeCallback(uuid); // Any uuid from the on* functions
 ```
 
 ## Credits
