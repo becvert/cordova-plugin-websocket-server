@@ -1,6 +1,7 @@
 import Foundation
 
-@objc(WebSocketServer) public class WebSocketServer : CDVPlugin, PSWebSocketServerDelegate {
+@objcMembers
+public class WebSocketServer : CDVPlugin, PSWebSocketServerDelegate {
 
     fileprivate var wsserver: PSWebSocketServer?
     fileprivate var port: Int?
