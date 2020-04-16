@@ -37,7 +37,19 @@ var WebSocketServer = {
                 if (conn) {
                     var callback = options[result.action];
                     if (callback) {
-                        callback(conn, result.msg);
+                        if(result.is_binary) {
+                            // convert Base64 string to ArrayBuffer
+                            var binary_string = window.atob(result.msg);
+                            var len = binary_string.length;
+                            var bytes = new Uint8Array(len);
+                            for (var i = 0; i < len; i++) {
+                                bytes[i] = binary_string.charCodeAt(i);
+                            }
+                            callback(conn, bytes.buffer);
+                        }
+                        else {
+                            callback(conn, result.msg);
+                        }
                     }
                 }
                 break;
@@ -71,7 +83,24 @@ var WebSocketServer = {
     },
 
     send : function(conn, msg) {
-        return exec(null, fail, "WebSocketServer", "send", [ conn.uuid, msg ]);
+        if (typeof msg == "string") {
+            
+            // send text frame (websocket opcode 1)
+            return exec(null, fail, "WebSocketServer", "send", [ conn.uuid, msg ]);
+
+        } else {
+            // convert any iterable object to Base64 string
+            var binary_string = '';
+            var bytes = new Uint8Array(msg);
+            var len = bytes.byteLength;
+            for (var i = 0; i < len; i++) {
+                binary_string += String.fromCharCode(bytes[i]);
+            }
+            var msg_base64 = window.btoa(binary_string);
+
+            // send binary frame (websocket opcode 2)
+            return exec(null, fail, "WebSocketServer", "send_binary", [ conn.uuid, msg_base64 ]);
+        }
     },
 
     close : function(conn, code, reason) {

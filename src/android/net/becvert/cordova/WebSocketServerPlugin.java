@@ -36,6 +36,7 @@ public class WebSocketServerPlugin extends CordovaPlugin {
     public static final String ACTION_START = "start";
     public static final String ACTION_STOP = "stop";
     public static final String ACTION_SEND = "send";
+    public static final String ACTION_SEND_BINARY = "send_binary";
     public static final String ACTION_CLOSE = "close";
 
     @Override
@@ -202,7 +203,7 @@ public class WebSocketServerPlugin extends CordovaPlugin {
                 }
             });
 
-        } else if (ACTION_SEND.equals(action)) {
+        } else if (ACTION_SEND.equals(action) || ACTION_SEND_BINARY.equals(action)) {
 
             final String uuid = args.optString(0);
             final String msg = args.optString(1);
@@ -211,7 +212,7 @@ public class WebSocketServerPlugin extends CordovaPlugin {
                     @Override
                     public void run() {
                         if (wsserver != null) {
-                            wsserver.send(uuid, msg);
+                            wsserver.send(uuid, msg, ACTION_SEND_BINARY.equals(action));
                         }
                     }
                 });

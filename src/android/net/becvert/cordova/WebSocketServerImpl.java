@@ -1,6 +1,7 @@
 package net.becvert.cordova;
 
 import android.util.Log;
+import android.util.Base64;
 
 import org.apache.cordova.CallbackContext;
 import org.apache.cordova.PluginResult;
@@ -17,6 +18,7 @@ import org.json.JSONObject;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
+import java.nio.ByteBuffer;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -150,6 +152,38 @@ public class WebSocketServerImpl extends WebSocketServer {
     }
 
     @Override
+    public void onMessage(WebSocket webSocket, ByteBuffer binary){
+        Log.v(WebSocketServerPlugin.TAG, "onmessage (binary)");
+
+        String uuid = socketsUUID.get(webSocket);
+
+        if (uuid != null) {
+            try {
+                // convert ByteBuffer to byte[]
+                byte[] bin = new byte[binary.remaining()];
+                binary.get(bin);
+
+                JSONObject status = new JSONObject();
+                status.put("action", "onMessage");
+                status.put("uuid", uuid);
+                status.put("msg", Base64.encodeToString(bin, Base64.DEFAULT));
+                status.put("is_binary", true);
+
+                Log.d(WebSocketServerPlugin.TAG, "onmessage (binary) result: " + status.toString());
+                PluginResult result = new PluginResult(PluginResult.Status.OK, status);
+                result.setKeepCallback(true);
+                callbackContext.sendPluginResult(result);
+
+            } catch (JSONException e) {
+                Log.e(WebSocketServerPlugin.TAG, e.getMessage(), e);
+                callbackContext.error("Error: " + e.getMessage());
+            }
+        } else {
+            Log.d(WebSocketServerPlugin.TAG, "onmessage (binary): unknown websocket");
+        }
+    }
+
+    @Override
     public void onClose(WebSocket webSocket, int code, String reason, boolean remote) {
         Log.v(WebSocketServerPlugin.TAG, "onclose");
 
@@ -272,14 +306,27 @@ public class WebSocketServerImpl extends WebSocketServer {
         }
     }
 
-    public void send(String uuid, String msg) {
+    public void send(String uuid, String msg, boolean is_binary) {
         Log.v(WebSocketServerPlugin.TAG, "send");
 
         WebSocket webSocket = UUIDSockets.get(uuid);
 
         if (webSocket != null && !this.failed) {
             if (webSocket.isOpen()) {
-                webSocket.send(msg);
+                if (!is_binary) {
+                    
+                    // send text frame (websocket opcode 1)
+                    webSocket.send(msg);
+                    
+                } else {
+                    // send binary frame (websocket opcode 2)
+                    try {
+                        webSocket.send(Base64.decode(msg, Base64.DEFAULT));
+
+                    } catch(IllegalArgumentException e) {
+                        Log.d(WebSocketServerPlugin.TAG, "send: wrong binary format");
+                    }
+                }
             } else {
                 Log.d(WebSocketServerPlugin.TAG, "send: websocket not open");
             }
