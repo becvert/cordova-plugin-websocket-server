@@ -51,11 +51,11 @@ import Foundation
                     }
 
                     if intf.family == .ipv6 {
-                        if ipv6Addresses.index(of: intf.address!) == nil {
+                        if ipv6Addresses.firstIndex(of: intf.address!) == nil {
                             ipv6Addresses.append(intf.address!)
                         }
                     } else if intf.family == .ipv4 {
-                        if ipv4Addresses.index(of: intf.address!) == nil {
+                        if ipv4Addresses.firstIndex(of: intf.address!) == nil {
                             ipv4Addresses.append(intf.address!)
                         }
                     }
@@ -275,7 +275,7 @@ import Foundation
 
         if let o = origins {
             let origin = request.value(forHTTPHeaderField: "Origin")
-            if o.index(of: origin!) == nil {
+            if o.firstIndex(of: origin!) == nil {
                 #if DEBUG
                     print("WebSocketServer: Origin denied: \(origin)")
                 #endif
@@ -337,7 +337,7 @@ import Foundation
             resource = String(cString: (webSocket.urlRequest.url!.query?.cString(using: String.Encoding.utf8))! )
         }
 
-        let conn: NSDictionary = NSDictionary(objects: [uuid, remoteAddr, acceptedProtocol, httpFields, resource], forKeys: ["uuid" as NSCopying, "remoteAddr" as NSCopying, "acceptedProtocol" as NSCopying, "httpFields" as NSCopying, "resource" as NSCopying])
+        let conn: NSDictionary = NSDictionary(objects: [uuid!, remoteAddr, acceptedProtocol, httpFields, resource], forKeys: ["uuid" as NSCopying, "remoteAddr" as NSCopying, "acceptedProtocol" as NSCopying, "httpFields" as NSCopying, "resource" as NSCopying])
         let status: NSDictionary = NSDictionary(objects: ["onOpen", conn], forKeys: ["action" as NSCopying, "conn" as NSCopying])
         let pluginResult = CDVPluginResult(status: CDVCommandStatus_OK, messageAs: (status as! [AnyHashable: Any]))
         pluginResult?.setKeepCallbackAs(true)
@@ -399,7 +399,7 @@ import Foundation
         if let secWebSocketProtocol = request.value(forHTTPHeaderField: "Sec-WebSocket-Protocol") {
             let requestedProtocols = secWebSocketProtocol.components(separatedBy: ", ")
             for requestedProtocol in requestedProtocols {
-                if protocols!.index(of: requestedProtocol) != nil {
+                if protocols!.firstIndex(of: requestedProtocol) != nil {
                     // returns first matching protocol.
                     // assumes in order of preference.
                     acceptedProtocol = requestedProtocol
