@@ -41,7 +41,7 @@ Binds to all available network interfaces ('0.0.0.0').
         console.log('A user connected from %s', conn.remoteAddr);
     },
     'onMessage' : function(conn, msg) {
-        console.log(conn, msg);
+        console.log(conn, msg); // msg can be a String (text message) or ArrayBuffer (binary message)
     },
     'onClose' : function(conn, code, reason, wasClean) {
         console.log('A user disconnected from %s', conn.remoteAddr);
@@ -70,7 +70,11 @@ wsserver.stop(function onStop(addr, port) {
 Sends a message to the given connection.
 
 ```javascript
-wsserver.send({'uuid':'8e176b14-a1af-70a7-3e3d-8b341977a16e'}, msg);
+// provide a String to send a text frame (websocket opcode 1)
+wsserver.send({'uuid':'8e176b14-a1af-70a7-3e3d-8b341977a16e'}, 'hello friend!');
+
+// provide a TypedArray / ArrayBuffer to send a binary frame (websocket opcode 2)
+wsserver.send({'uuid':'8e176b14-a1af-70a7-3e3d-8b341977a16e'}, Uint8Array.from([1, 2, 3, 4]));
 ```
 
 #### `close(conn, code, reason)`
