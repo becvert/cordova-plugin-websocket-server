@@ -184,6 +184,34 @@ import Foundation
             #endif
         }
     }
+    
+    @objc public func send_binary(_ command: CDVInvokedUrlCommand) {
+
+        #if DEBUG
+            print("WebSocketServer: send_binary")
+        #endif
+
+        let uuid = command.argument(at: 0) as? String
+        let msg = command.argument(at: 1) as? String
+
+        if uuid != nil && msg != nil {
+            if let webSocket = UUIDSockets[uuid!] {
+
+                commandDelegate?.run(inBackground: {
+                    webSocket.send(NSData(base64Encoded: msg!, options: .ignoreUnknownCharacters))
+                })
+
+            } else {
+                #if DEBUG
+                    print("WebSocketServer: Send: unknown socket.")
+                #endif
+            }
+        } else {
+            #if DEBUG
+                print("WebSocketServer: Send: UUID or msg not specified.")
+            #endif
+        }
+    }
 
     @objc public func close(_ command: CDVInvokedUrlCommand) {
 
@@ -351,7 +379,13 @@ import Foundation
         #endif
 
         if let uuid = socketsUUID[webSocket] {
-            let status: NSDictionary = NSDictionary(objects: ["onMessage", uuid, message], forKeys: ["action" as NSCopying, "uuid" as NSCopying, "msg" as NSCopying])
+            let objects: [Any];
+            if let data = message as? NSData{
+                objects = ["onMessage", uuid, data.base64EncodedString(), true];
+            } else {
+                objects = ["onMessage", uuid, message, false];
+            }
+            let status: NSDictionary = NSDictionary(objects: objects, forKeys: ["action" as NSCopying, "uuid" as NSCopying, "msg" as NSCopying, "is_binary" as NSCopying])
             let pluginResult = CDVPluginResult(status: CDVCommandStatus_OK, messageAs: (status as! [AnyHashable: Any]))
             pluginResult?.setKeepCallbackAs(true)
             commandDelegate?.send(pluginResult, callbackId: startCallbackId)
