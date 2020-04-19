@@ -50,8 +50,8 @@ Binds to all available network interfaces ('0.0.0.0').
     'origins' : [ 'file://' ], // validates the 'Origin' HTTP Header.
     'protocols' : [ 'my-protocol-v1', 'my-protocol-v2' ], // validates the 'Sec-WebSocket-Protocol' HTTP Header.
     'tcpNoDelay' : true // disables Nagle's algorithm.
-}, function onStart(addr, port) {
-    console.log('Listening on %s:%d', addr, port);
+}, function onStart(server) {
+    console.log('Listening on %s:%d', server.addr, server.port);
 }, function onDidNotStart(reason) {
     console.log('Did not start. Reason: %s', reason);
 });
@@ -61,8 +61,8 @@ Binds to all available network interfaces ('0.0.0.0').
 Stops the server.
 
 ```javascript
-wsserver.stop(function onStop(addr, port) {
-    console.log('Stopped listening on %s:%d', addr, port);
+wsserver.stop(function onStop(server) {
+    console.log('Stopped listening on %s:%d', server.addr, server.port);
 });
 ```
 
@@ -97,6 +97,52 @@ wsserver.getInterfaces(function(result) {
         }
     }
 });
+```
+
+#### `onMessage(success, failure)`
+Add additional callback for receiving messages
+
+```javascript
+const uuid = wsserver.onMessage(function(result) {
+    console.log('Connection', result.conn);
+    console.log('Message', result.msg);
+}, null); // Currently failure is not handled
+```
+
+#### `onOpen(success, failure)`
+Add additional callback for new connections 
+
+```javascript
+const uuid = wsserver.onOpen(function(conn) {
+    console.log('Connection', conn);
+}, null); // Currently failure is not handled
+```
+
+#### `onClose(success, failure)`
+Add additional callback for closed connections
+
+```javascript
+const uuid = wsserver.onClose(function(result) {
+    console.log('Connection', result.conn);
+    console.log(`Code: ${result.code}, Reason: ${result.reason}, Clean: ${result.wasClean}`);
+}, null); // Currently failure is not handled
+```
+
+#### `onFailure(success, failure)`
+Add additional callback for failures
+
+```javascript
+const uuid = wsserver.onFailure(function(result) {
+    console.log(`Server at ${result.addr}:${result.port} has failed`);
+    console.log(result.reason);
+}, null); // Currently failure is not handled
+```
+
+#### `removeCallback(uuid)`
+Remove any callback added by using uuid
+
+```javascript
+wsserver.removeCallback(uuid); // Any uuid from the on* functions
 ```
 
 ## Credits
