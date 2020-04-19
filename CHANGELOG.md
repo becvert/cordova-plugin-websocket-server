@@ -1,3 +1,9 @@
+## [1.6.0] - 2020-04-18
+
+- Support for binary messages (websocket opcode 2)
+- [iOS] updating cordova-plugin-add-swift-support dependency to 2.0.2
+- [iOS] support Swift 5
+
 ## [1.5.0] - 2019-04-02
 
 - [Android] upgrading to [org:java-websocket:1.4.0](https://github.com/TooTallNate/Java-WebSocket)

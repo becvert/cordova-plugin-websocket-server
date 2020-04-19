@@ -51,11 +51,11 @@ import Foundation
                     }
 
                     if intf.family == .ipv6 {
-                        if ipv6Addresses.index(of: intf.address!) == nil {
+                        if ipv6Addresses.firstIndex(of: intf.address!) == nil {
                             ipv6Addresses.append(intf.address!)
                         }
                     } else if intf.family == .ipv4 {
-                        if ipv4Addresses.index(of: intf.address!) == nil {
+                        if ipv4Addresses.firstIndex(of: intf.address!) == nil {
                             ipv4Addresses.append(intf.address!)
                         }
                     }
@@ -184,6 +184,34 @@ import Foundation
             #endif
         }
     }
+    
+    @objc public func send_binary(_ command: CDVInvokedUrlCommand) {
+
+        #if DEBUG
+            print("WebSocketServer: send_binary")
+        #endif
+
+        let uuid = command.argument(at: 0) as? String
+        let msg = command.argument(at: 1) as? String
+
+        if uuid != nil && msg != nil {
+            if let webSocket = UUIDSockets[uuid!] {
+
+                commandDelegate?.run(inBackground: {
+                    webSocket.send(NSData(base64Encoded: msg!, options: .ignoreUnknownCharacters))
+                })
+
+            } else {
+                #if DEBUG
+                    print("WebSocketServer: Send: unknown socket.")
+                #endif
+            }
+        } else {
+            #if DEBUG
+                print("WebSocketServer: Send: UUID or msg not specified.")
+            #endif
+        }
+    }
 
     @objc public func close(_ command: CDVInvokedUrlCommand) {
 
@@ -275,7 +303,7 @@ import Foundation
 
         if let o = origins {
             let origin = request.value(forHTTPHeaderField: "Origin")
-            if o.index(of: origin!) == nil {
+            if o.firstIndex(of: origin!) == nil {
                 #if DEBUG
                     print("WebSocketServer: Origin denied: \(origin)")
                 #endif
@@ -337,7 +365,7 @@ import Foundation
             resource = String(cString: (webSocket.urlRequest.url!.query?.cString(using: String.Encoding.utf8))! )
         }
 
-        let conn: NSDictionary = NSDictionary(objects: [uuid, remoteAddr, acceptedProtocol, httpFields, resource], forKeys: ["uuid" as NSCopying, "remoteAddr" as NSCopying, "acceptedProtocol" as NSCopying, "httpFields" as NSCopying, "resource" as NSCopying])
+        let conn: NSDictionary = NSDictionary(objects: [uuid!, remoteAddr, acceptedProtocol, httpFields, resource], forKeys: ["uuid" as NSCopying, "remoteAddr" as NSCopying, "acceptedProtocol" as NSCopying, "httpFields" as NSCopying, "resource" as NSCopying])
         let status: NSDictionary = NSDictionary(objects: ["onOpen", conn], forKeys: ["action" as NSCopying, "conn" as NSCopying])
         let pluginResult = CDVPluginResult(status: CDVCommandStatus_OK, messageAs: (status as! [AnyHashable: Any]))
         pluginResult?.setKeepCallbackAs(true)
@@ -351,7 +379,13 @@ import Foundation
         #endif
 
         if let uuid = socketsUUID[webSocket] {
-            let status: NSDictionary = NSDictionary(objects: ["onMessage", uuid, message], forKeys: ["action" as NSCopying, "uuid" as NSCopying, "msg" as NSCopying])
+            let objects: [Any];
+            if let data = message as? NSData{
+                objects = ["onMessage", uuid, data.base64EncodedString(), true];
+            } else {
+                objects = ["onMessage", uuid, message, false];
+            }
+            let status: NSDictionary = NSDictionary(objects: objects, forKeys: ["action" as NSCopying, "uuid" as NSCopying, "msg" as NSCopying, "is_binary" as NSCopying])
             let pluginResult = CDVPluginResult(status: CDVCommandStatus_OK, messageAs: (status as! [AnyHashable: Any]))
             pluginResult?.setKeepCallbackAs(true)
             commandDelegate?.send(pluginResult, callbackId: startCallbackId)
@@ -399,7 +433,7 @@ import Foundation
         if let secWebSocketProtocol = request.value(forHTTPHeaderField: "Sec-WebSocket-Protocol") {
             let requestedProtocols = secWebSocketProtocol.components(separatedBy: ", ")
             for requestedProtocol in requestedProtocols {
-                if protocols!.index(of: requestedProtocol) != nil {
+                if protocols!.firstIndex(of: requestedProtocol) != nil {
                     // returns first matching protocol.
                     // assumes in order of preference.
                     acceptedProtocol = requestedProtocol
